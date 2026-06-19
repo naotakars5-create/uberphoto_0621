@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fff8f3">
+  <link rel="manifest" href="/static/manifest.json">
+  <title>UberPHOTO — カメラマン</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="logo"><span class="u">Uber</span>PHOTO</div>
+      <div class="badge">Photographer</div>
+    </div>
+
+    <!-- register -->
+    <section id="step-register">
+      <p class="eyebrow">Join as photographer</p>
+      <h1>カメラマン<br>として稼ぐ</h1>
+      <p class="sub">一眼を持っているなら、空き時間が収入に。</p>
+
+      <div class="card" style="padding:6px 18px;margin-bottom:18px">
+        <div class="features">
+          <div class="feature"><div class="fi"><i data-icon="coin"></i></div><div><div class="ft">1件あたり 約2,500〜4,100円</div><div class="fd">繁忙時は時給6,500円も</div></div></div>
+          <div class="feature"><div class="fi"><i data-icon="zap"></i></div><div><div class="ft">待機して受けるだけ</div><div class="fd">観光地で効率よく連続マッチ</div></div></div>
+          <div class="feature"><div class="fi"><i data-icon="flag"></i></div><div><div class="ft">副業に最適</div><div class="fd">好きな時間だけオンに</div></div></div>
+        </div>
+      </div>
+
+      <label>お名前</label>
+      <input type="text" id="pname" placeholder="例：山田" />
+      <label>電話番号（任意）</label>
+      <input type="tel" id="pphone" placeholder="090-..." />
+      <button class="btn brand" id="registerBtn">登録して始める <i data-icon="arrow" data-size="19"></i></button>
+    </section>
+
+    <!-- standby -->
+    <section id="step-standby" class="hidden">
+      <p class="eyebrow">Standby</p>
+      <h1 id="hello"></h1>
+
+      <div class="earn">
+        <div class="k">今日の想定収入</div>
+        <div class="v" id="todayEarn">¥0</div>
+        <div class="sub" id="earnSub">待機をオンにして稼ぎ始めましょう</div>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <div class="meter">
+          <span style="font-size:13px;font-weight:700">いまの需要</span>
+          <div class="bar"><div class="fill" style="width:78%"></div></div>
+          <span class="lab">高</span>
+        </div>
+        <div class="divider" style="margin:14px 0"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div class="muted" style="font-size:11px;letter-spacing:.14em;text-transform:uppercase">ステータス</div>
+            <div class="big" id="statusText" style="font-size:22px">オフライン</div>
+          </div>
+          <div class="rating-inline"><i data-icon="star" data-size="14"></i>4.9 · 128件</div>
+        </div>
+        <button class="btn brand" id="toggleBtn">待機をオンにする</button>
+      </div>
+
+      <h2 style="margin-top:30px">着信リクエスト</h2>
+      <div id="requests"><p class="muted">オンラインにすると、近くの依頼がここに届きます。</p></div>
+    </section>
+
+    <!-- session / upload -->
+    <section id="step-session" class="hidden">
+      <p class="eyebrow">Session</p>
+      <h1>撮影セッション</h1>
+      <div class="card photographer-card">
+        <div class="avatar" id="sessAvatar">?</div>
+        <div style="flex:1">
+          <div style="font-family:var(--serif);font-size:18px;font-weight:700" id="sessCustomer"></div>
+          <div class="muted" id="sessPlan" style="font-size:13px"></div>
+        </div>
+      </div>
+      <div class="card">
+        <p style="margin-top:0;display:flex;align-items:center;gap:8px"><i data-icon="image" data-size="18" style="color:var(--brand2)"></i>撮影した写真を届けましょう</p>
+        <input type="file" id="fileInput" accept="image/*" multiple capture="environment" style="margin:6px 0" />
+        <button class="btn accent" id="uploadBtn"><i data-icon="zap" data-size="18"></i> 写真をアップロード</button>
+        <p class="center muted" id="uploadCount" style="margin-top:12px;margin-bottom:0"></p>
+      </div>
+      <button class="btn green" id="completeBtn"><i data-icon="check" data-size="18"></i> 撮影を完了する</button>
+    </section>
+  </div>
+
+  <script src="/static/js/icons.js"></script>
+  <script src="/static/js/common.js"></script>
+  <script src="/static/js/photographer.js"></script>
+</body>
+</html>

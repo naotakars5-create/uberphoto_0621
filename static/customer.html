@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fff8f3">
+  <link rel="manifest" href="/static/manifest.json">
+  <title>UberPHOTO — 撮影を依頼</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="logo"><span class="u">Uber</span>PHOTO</div>
+      <div class="badge">Guest</div>
+    </div>
+
+    <!-- STEP 1: plan + info -->
+    <section id="step-plan">
+      <p class="eyebrow">Choose your plan</p>
+      <h1>プランを選ぶ</h1>
+      <p class="sub">税込価格・レタッチ不要・その場で受け取り。</p>
+
+      <div class="chips" style="margin-bottom:18px">
+        <span class="chip"><i data-icon="clock" data-size="15"></i>30分</span>
+        <span class="chip"><i data-icon="zap" data-size="15"></i>即マッチ</span>
+        <span class="chip"><i data-icon="shield" data-size="15"></i>本人確認済み</span>
+      </div>
+
+      <div id="plans"></div>
+
+      <label>お名前（ニックネーム可）</label>
+      <input type="text" id="name" placeholder="例：たろう" />
+      <label>撮影スポット</label>
+      <input type="text" id="location" placeholder="例：浅草寺 雷門前" />
+
+      <button class="btn brand" id="toPay" disabled>決済して撮影を依頼 <i data-icon="arrow" data-size="19"></i></button>
+
+      <!-- what's included -->
+      <div class="section">
+        <div class="section-head"><h2>含まれるもの</h2></div>
+        <div class="card" style="padding:6px 18px">
+          <div class="features">
+            <div class="feature"><div class="fi"><i data-icon="camera"></i></div><div><div class="ft">プロ機材で撮影</div><div class="fd">一眼の自然光ポートレート・スナップ</div></div></div>
+            <div class="feature"><div class="fi"><i data-icon="zap"></i></div><div><div class="ft">その場で即共有</div><div class="fd">撮ってすぐ、スマホに全データ</div></div></div>
+            <div class="feature"><div class="fi"><i data-icon="edit"></i></div><div><div class="ft">かんたん編集つき</div><div class="fd">明るさ・色味をワンタップ調整</div></div></div>
+            <div class="feature"><div class="fi"><i data-icon="image"></i></div><div><div class="ft">写真の権利はあなたに</div><div class="fd">SNS掲載・印刷も自由</div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- sample work -->
+      <div class="section">
+        <div class="section-head"><h2>撮れる写真</h2></div>
+        <div class="duo-grid">
+          <div class="duo"><img src="/static/img/work1.jpg" alt=""></div>
+          <div class="duo"><img src="/static/img/work3.jpg" alt=""></div>
+          <div class="duo"><img src="/static/img/work5.jpg" alt=""></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 2: select photographer -->
+    <section id="step-select" class="hidden">
+      <p class="eyebrow">Nearby</p>
+      <h1>カメラマンを選ぶ</h1>
+      <p class="near" style="margin-bottom:16px"><span class="dot"></span><span id="nearCount">近くに3人</span> 待機中</p>
+
+      <button class="omakase" id="omakaseBtn">
+        <span class="om-ic"><i data-icon="zap" data-size="20"></i></span>
+        <span class="om-text"><span class="om-t">おまかせ・最短のプロ</span><span class="om-d" id="omakaseDesc">いちばん早く来られるカメラマンに即依頼</span></span>
+        <i data-icon="arrow" data-size="18"></i>
+      </button>
+
+      <div class="or-row"><span>または、指名して選ぶ</span></div>
+
+      <div id="photographers"></div>
+      <button class="btn secondary" id="backToPlan">プラン選択に戻る</button>
+    </section>
+
+    <!-- profile detail sheet -->
+    <div id="profileSheet" class="sheet hidden">
+      <div class="sheet-backdrop" id="sheetBackdrop"></div>
+      <div class="sheet-body" id="sheetBody"></div>
+    </div>
+
+    <!-- STEP 2.5: photographer on the way (map + ETA) -->
+    <section id="step-arriving" class="hidden">
+      <p class="eyebrow">On the way</p>
+      <h1 id="arriveTitle">向かっています</h1>
+      <p class="sub" id="arriveSub">カメラマンがお迎えに向かっています</p>
+
+      <div class="map-card">
+        <svg viewBox="0 0 400 232" preserveAspectRatio="xMidYMid slice" class="map-svg">
+          <rect width="400" height="232" fill="#eef0ec"/>
+          <g fill="#e3e6df">
+            <rect x="18" y="20" width="120" height="70" rx="8"/>
+            <rect x="156" y="14" width="96" height="54" rx="8"/>
+            <rect x="272" y="22" width="110" height="62" rx="8"/>
+            <rect x="20" y="112" width="92" height="92" rx="8"/>
+            <rect x="130" y="108" width="120" height="58" rx="8"/>
+            <rect x="268" y="104" width="116" height="100" rx="8"/>
+          </g>
+          <g fill="none" stroke="#dfe2da" stroke-width="10">
+            <path d="M0,100 H400"/><path d="M150,0 V232"/><path d="M258,0 V232"/>
+          </g>
+          <!-- route -->
+          <path id="routePath" d="M34,206 C112,176 132,118 210,126 S332,74 360,54"
+                fill="none" stroke="#ff7a3d" stroke-width="4" stroke-dasharray="2 9"
+                stroke-linecap="round" opacity="0.9"/>
+          <!-- destination (you) -->
+          <g transform="translate(360,54)">
+            <circle r="13" fill="#ff2e63" opacity="0.18"/>
+            <circle r="6" fill="#ff2e63" stroke="#fff" stroke-width="2.5"/>
+          </g>
+          <!-- moving photographer marker -->
+          <g>
+            <circle r="13" fill="#2a1830" stroke="#fff" stroke-width="3"/>
+            <text y="4.5" text-anchor="middle" font-size="13" fill="#fff" font-family="serif" font-weight="700" id="markerInit">P</text>
+            <animateMotion dur="6s" repeatCount="indefinite" rotate="0" keyPoints="0;1" keyTimes="0;1" calcMode="linear">
+              <mpath href="#routePath"/>
+            </animateMotion>
+          </g>
+        </svg>
+        <div class="eta-badge"><span class="eta-num" id="etaCount">--:--</span><span class="eta-lab">到着まで</span></div>
+      </div>
+
+      <div class="card photographer-card" style="margin-top:14px">
+        <div class="avatar" id="aAvatar">?</div>
+        <div style="flex:1">
+          <div style="font-family:var(--serif);font-size:18px;font-weight:700" id="aName"></div>
+          <div class="rating-inline" id="aMeta"><i data-icon="star" data-size="14"></i></div>
+        </div>
+        <div class="near" style="padding:7px 13px"><span class="dot"></span>移動中</div>
+      </div>
+
+      <div class="btn-row" style="margin-top:16px">
+        <button class="btn secondary" id="reselectBtn"><i data-icon="refresh" data-size="17"></i> 別の人にする</button>
+        <button class="btn secondary" id="cancelReqBtn">依頼をやめる</button>
+      </div>
+    </section>
+
+    <!-- STEP 3: matched / photos -->
+    <section id="step-matched" class="hidden">
+      <p class="eyebrow">Matched</p>
+      <h1>マッチしました 🎉</h1>
+      <div class="card photographer-card">
+        <div class="avatar" id="pAvatar">?</div>
+        <div style="flex:1">
+          <div style="font-family:var(--serif);font-size:18px;font-weight:700" id="pName"></div>
+          <div class="rating-inline" id="pMeta"><i data-icon="star" data-size="14"></i>まもなく合流します</div>
+        </div>
+      </div>
+      <div class="card center">
+        <p class="muted" style="margin-top:0">撮影が終わると、ここに写真が届きます</p>
+        <p id="shotStatus" class="big">📷</p>
+      </div>
+      <a class="btn brand hidden" id="toGallery">写真を見る <i data-icon="arrow" data-size="19"></i></a>
+    </section>
+  </div>
+
+  <script src="/static/js/icons.js"></script>
+  <script src="/static/js/common.js"></script>
+  <script src="/static/js/customer.js"></script>
+</body>
+</html>

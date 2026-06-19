@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+websockets
+python-multipart
+# Optional: only needed for real payments (stub mode works without it)
+# stripe

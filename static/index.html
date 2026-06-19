@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fff8f3">
+  <link rel="manifest" href="/static/manifest.json">
+  <title>UberPHOTO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="logo"><span class="u">Uber</span>PHOTO</div>
+      <div class="badge">β MVP</div>
+    </div>
+
+    <!-- HERO -->
+    <div class="hero reveal">
+      <img src="/static/img/hero.jpg" alt="">
+      <div class="hero-inner">
+        <p class="eyebrow">Tourist × Photographer</p>
+        <h1>旅の一瞬を、<br>作品に変える。</h1>
+        <p>近くのプロと、その場でマッチング。30分で、自然な一枚を。</p>
+      </div>
+    </div>
+
+    <!-- stats -->
+    <div class="stats-bar reveal">
+      <div class="item"><div class="v"><i data-icon="star" data-size="17"></i>4.9</div><div class="k">平均評価</div></div>
+      <div class="item"><div class="v">1,200<span style="font-size:14px">+</span></div><div class="k">撮影実績</div></div>
+      <div class="item"><div class="v">30<span style="font-size:14px">分</span></div><div class="k">で受け取り</div></div>
+    </div>
+
+    <!-- CTA -->
+    <a class="btn brand reveal" href="/customer" style="margin-top:22px">今すぐ撮影を頼む <i data-icon="arrow" data-size="19"></i></a>
+    <a class="btn secondary reveal" href="/photographer" style="margin-top:12px">カメラマンとして参加</a>
+
+    <!-- how it works -->
+    <div class="section">
+      <div class="section-head"><h2>かんたん3ステップ</h2></div>
+      <div class="steps">
+        <div class="step"><div class="num"><i data-icon="zap" data-size="24"></i></div><div><div class="st">今すぐリクエスト</div><div class="sd">プランを選んで、その場で依頼。事前予約は不要。</div></div></div>
+        <div class="step-line"></div>
+        <div class="step"><div class="num"><i data-icon="pin" data-size="24"></i></div><div><div class="st">近くのプロとマッチ</div><div class="sd">待機中のカメラマンが数分で合流します。</div></div></div>
+        <div class="step-line"></div>
+        <div class="step"><div class="num"><i data-icon="image" data-size="24"></i></div><div><div class="st">その場で受け取り</div><div class="sd">撮ってすぐ共有。アプリでかんたん編集も。</div></div></div>
+      </div>
+    </div>
+
+    <!-- featured photographers -->
+    <div class="section">
+      <div class="section-head"><h2>近くのカメラマン</h2><span class="more">すべて見る ›</span></div>
+      <div class="hscroll">
+        <div class="ph-card">
+          <img class="thumb" src="/static/img/work1.jpg" alt="">
+          <div class="body">
+            <div class="nm">Yuki <span class="verified" title="本人確認済み"><i data-icon="shield" data-size="14"></i></span></div>
+            <div class="rt"><i data-icon="star" data-size="14"></i>4.9 · 320件</div>
+            <div class="tags"><span class="tag">ポートレート</span><span class="tag">自然光</span></div>
+          </div>
+        </div>
+        <div class="ph-card">
+          <img class="thumb" src="/static/img/work2.jpg" alt="">
+          <div class="body">
+            <div class="nm">Ren <span class="verified"><i data-icon="shield" data-size="14"></i></span></div>
+            <div class="rt"><i data-icon="star" data-size="14"></i>4.8 · 210件</div>
+            <div class="tags"><span class="tag">スナップ</span><span class="tag">家族</span></div>
+          </div>
+        </div>
+        <div class="ph-card">
+          <img class="thumb" src="/static/img/work3.jpg" alt="">
+          <div class="body">
+            <div class="nm">Mei <span class="verified"><i data-icon="shield" data-size="14"></i></span></div>
+            <div class="rt"><i data-icon="star" data-size="14"></i>5.0 · 158件</div>
+            <div class="tags"><span class="tag">カップル</span><span class="tag">映え</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- sample gallery -->
+    <div class="section">
+      <div class="section-head"><h2>撮れる写真</h2></div>
+      <div class="duo-grid">
+        <div class="duo"><img src="/static/img/work4.jpg" alt=""></div>
+        <div class="duo"><img src="/static/img/work5.jpg" alt=""></div>
+        <div class="duo"><img src="/static/img/work6.jpg" alt=""></div>
+        <div class="duo"><img src="/static/img/strip1.jpg" alt=""></div>
+        <div class="duo"><img src="/static/img/strip2.jpg" alt=""></div>
+        <div class="duo"><img src="/static/img/strip3.jpg" alt=""></div>
+      </div>
+    </div>
+
+    <!-- trust -->
+    <div class="section">
+      <div class="trust">
+        <div class="t"><i data-icon="shield" data-size="22"></i><div class="l">本人確認済み</div></div>
+        <div class="t"><i data-icon="heart" data-size="22"></i><div class="l">満足保証</div></div>
+        <div class="t"><i data-icon="image" data-size="22"></i><div class="l">写真はあなたに</div></div>
+      </div>
+    </div>
+
+    <a class="btn brand" href="/customer" style="margin-top:30px">撮影をはじめる <i data-icon="arrow" data-size="19"></i></a>
+    <a class="role" href="/operator" style="margin-top:14px">
+      <div class="ricon"><i data-icon="map" data-size="24"></i></div>
+      <div><div class="t">オペレーター画面</div><div class="d">エリアの需給をリアルタイムで見る</div></div>
+      <div class="chev"><i data-icon="chevron" data-size="18"></i></div>
+    </a>
+
+    <p class="footnote center">浅草エリア ／ 土日 14:00–18:00 試験運用中</p>
+  </div>
+  <script src="/static/js/icons.js"></script>
+  <script src="/static/js/common.js"></script>
+</body>
+</html>

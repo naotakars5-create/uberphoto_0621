@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Runtime data (regenerated; ephemeral on cloud hosts)
+uberphoto.db
+uploads/
+
+# Local tools / artifacts (not for deploy)
+cloudflared.exe
+_shot_*.png
+_v_*.png
+_pv_*.html
+_contact.jpg
+make_icons.py

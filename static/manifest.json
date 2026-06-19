@@ -1,0 +1,13 @@
+{
+  "name": "UberPHOTO",
+  "short_name": "UberPHOTO",
+  "description": "観光地で今すぐプロ撮影。カメラマンとリアルタイムマッチング。",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f2ec",
+  "theme_color": "#f6f2ec",
+  "icons": [
+    { "src": "/static/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/static/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

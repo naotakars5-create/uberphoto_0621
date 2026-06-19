@@ -1,0 +1,14 @@
+# Render Blueprint — deploy with "New +" → "Blueprint" and point at this repo.
+services:
+  - type: web
+    name: uberphoto
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      # Uncomment and set in the Render dashboard to enable real payments:
+      # - key: STRIPE_SECRET_KEY
+      #   sync: false
