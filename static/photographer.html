@@ -63,13 +63,66 @@
             <div class="muted" style="font-size:11px;letter-spacing:.14em;text-transform:uppercase">ステータス</div>
             <div class="big" id="statusText" style="font-size:22px">オフライン</div>
           </div>
-          <div class="rating-inline"><i data-icon="star" data-size="14"></i>4.9 · 128件</div>
+          <div class="rating-inline" id="pcStatTop"><i data-icon="star" data-size="14"></i>—</div>
         </div>
         <button class="btn brand" id="toggleBtn">待機をオンにする</button>
       </div>
 
+      <!-- my profile -->
+      <div class="card profile-card" style="margin-top:14px">
+        <div class="pc-head">
+          <img class="pc-avatar" id="pcAvatar" src="/static/img/work1.jpg" alt="">
+          <div style="flex:1;min-width:0">
+            <div class="pc-name" id="pcName">—</div>
+            <div class="rating-inline" id="pcStat"><i data-icon="star" data-size="14"></i>—</div>
+            <div class="pc-tags pick-tags" id="pcTags"></div>
+          </div>
+        </div>
+        <p class="pc-bio muted" id="pcBio"></p>
+        <button class="btn secondary" id="editProfileBtn"><i data-icon="edit" data-size="17"></i> プロフィールを編集</button>
+      </div>
+
       <h2 style="margin-top:30px">着信リクエスト</h2>
       <div id="requests"><p class="muted">オンラインにすると、近くの依頼がここに届きます。</p></div>
+
+      <h2 style="margin-top:30px">お客様からのレビュー</h2>
+      <div id="pReviews" class="reviews"><p class="muted">まだレビューはありません。撮影が完了すると、お客様の評価がここに表示されます。</p></div>
+    </section>
+
+    <!-- profile editor -->
+    <section id="step-profile" class="hidden">
+      <p class="eyebrow">Profile</p>
+      <h1>プロフィールを編集</h1>
+      <p class="sub">お客様が見る情報です。作例を載せると選ばれやすくなります。</p>
+
+      <div class="avatar-edit">
+        <img class="ae-img" id="aeAvatar" src="/static/img/work1.jpg" alt="">
+        <label class="ae-btn">
+          <i data-icon="camera" data-size="16"></i> プロフィール写真を変更
+          <input type="file" id="avatarInput" accept="image/*" hidden>
+        </label>
+      </div>
+
+      <label>表示名</label>
+      <input type="text" id="epName" placeholder="例：Yuki" />
+
+      <label>自己紹介</label>
+      <textarea id="epBio" rows="3" placeholder="例：自然光のポートレートが得意。肩の力が抜けた、その人らしい一枚を。"></textarea>
+
+      <label>得意なジャンル（複数選択OK）</label>
+      <div class="opt-chips" id="epTags"></div>
+
+      <div class="section" style="margin-top:24px">
+        <div class="section-head"><h2>作例</h2><span class="more" id="pfCount">0枚</span></div>
+        <div class="pf-grid" id="pfGrid"></div>
+        <label class="pf-add" id="pfAddBtn">
+          <i data-icon="image" data-size="18"></i> <span>作例を追加</span>
+          <input type="file" id="pfInput" accept="image/*" multiple hidden>
+        </label>
+      </div>
+
+      <button class="btn brand" id="saveProfileBtn"><i data-icon="check" data-size="18"></i> 保存する</button>
+      <button class="btn secondary" id="profileBackBtn">戻る</button>
     </section>
 
     <!-- session / upload -->

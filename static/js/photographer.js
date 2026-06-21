@@ -10,8 +10,9 @@ let sessionsDone = 0;
 const $ = (id) => document.getElementById(id);
 
 function show(step) {
-  ['step-register', 'step-standby', 'step-session'].forEach((s) => $(s).classList.add('hidden'));
+  ['step-register', 'step-standby', 'step-session', 'step-profile'].forEach((s) => $(s).classList.add('hidden'));
   $(step).classList.remove('hidden');
+  window.scrollTo(0, 0);
 }
 
 // resume saved identity
@@ -36,7 +37,148 @@ function enterStandby() {
   show('step-standby');
   $('hello').textContent = `こんにちは、${me.name}さん`;
   requestNotifyPermission();
+  loadMyProfile();
 }
+
+// ---------- profile ----------
+let myProfile = null;
+let editTags = [];
+let editPortfolio = [];
+const TAG_OPTS = ['ポートレート', '自然光', 'スナップ', '家族', 'カップル', '映え', '風景', '旅', '夜景', 'イルミ', 'プロフィール'];
+
+async function loadMyProfile() {
+  try {
+    myProfile = await api(`/api/photographers/${me.id}`);
+  } catch (e) { return; }
+  const statTxt = `${icon('star', 14)}${myProfile.rating ?? '—'} · ${myProfile.review_count}件のレビュー`;
+  $('pcStat').innerHTML = statTxt;
+  $('pcStatTop').innerHTML = statTxt;
+  $('pcName').textContent = myProfile.name || me.name;
+  $('hello').textContent = `こんにちは、${myProfile.name || me.name}さん`;
+  $('pcBio').textContent = myProfile.bio || '自己紹介がまだありません。「プロフィールを編集」から追加しましょう。';
+  if (myProfile.thumb) { $('pcAvatar').src = myProfile.thumb; $('aeAvatar').src = myProfile.thumb; }
+  $('pcTags').innerHTML = (myProfile.tags || []).map((t) => `<span class="tag">${t}</span>`).join('');
+  // received reviews
+  const rv = $('pReviews');
+  if (myProfile.reviews && myProfile.reviews.length) {
+    rv.innerHTML = myProfile.reviews.map(reviewHtml).join('');
+  } else {
+    rv.innerHTML = '<p class="muted">まだレビューはありません。撮影が完了すると、お客様の評価がここに表示されます。</p>';
+  }
+}
+
+function reviewHtml(r) {
+  const stars = '★'.repeat(r.rating) + `<span class="dim">${'★'.repeat(5 - r.rating)}</span>`;
+  return `
+    <div class="review">
+      <div class="review-head">
+        <span class="review-author">${r.author}</span>
+        <span class="review-stars">${stars}</span>
+        <span class="review-ago">${r.ago || ''}</span>
+      </div>
+      <div class="review-text">${r.text}</div>
+    </div>`;
+}
+
+function enterProfile() {
+  show('step-profile');
+  editTags = [...(myProfile.tags || [])];
+  editPortfolio = [...(myProfile.portfolio || [])];
+  $('epName').value = myProfile.name || '';
+  $('epBio').value = myProfile.bio || '';
+  if (myProfile.thumb) $('aeAvatar').src = myProfile.thumb;
+  renderTagChips();
+  renderPortfolio();
+  hydrateIcons($('step-profile'));
+}
+
+function renderTagChips() {
+  const wrap = $('epTags');
+  wrap.innerHTML = '';
+  TAG_OPTS.forEach((t) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'opt-chip' + (editTags.includes(t) ? ' on' : '');
+    b.textContent = t;
+    b.onclick = () => {
+      if (editTags.includes(t)) { editTags = editTags.filter((x) => x !== t); b.classList.remove('on'); }
+      else { editTags.push(t); b.classList.add('on'); }
+    };
+    wrap.appendChild(b);
+  });
+}
+
+function renderPortfolio() {
+  const grid = $('pfGrid');
+  grid.innerHTML = '';
+  editPortfolio.forEach((src, i) => {
+    const item = document.createElement('div');
+    item.className = 'pf-item';
+    item.innerHTML = `<img src="${src}" alt=""><button type="button" class="pf-remove" aria-label="削除">×</button>`;
+    item.querySelector('.pf-remove').onclick = () => { editPortfolio.splice(i, 1); renderPortfolio(); };
+    grid.appendChild(item);
+  });
+  $('pfCount').textContent = `${editPortfolio.length}枚`;
+}
+
+// avatar upload (immediate)
+document.addEventListener('change', async (e) => {
+  if (e.target && e.target.id === 'avatarInput' && e.target.files.length) {
+    const fd = new FormData();
+    fd.append('file', e.target.files[0]);
+    try {
+      const res = await fetch(`/api/photographers/${me.id}/avatar`, { method: 'POST', body: fd });
+      const data = await res.json();
+      $('aeAvatar').src = data.thumb;
+      if (myProfile) myProfile.thumb = data.thumb;
+      $('pcAvatar').src = data.thumb;
+      toast('プロフィール写真を更新しました');
+    } catch (err) { toast('アップロード失敗'); }
+    e.target.value = '';
+  }
+  if (e.target && e.target.id === 'pfInput' && e.target.files.length) {
+    const fd = new FormData();
+    for (const f of e.target.files) fd.append('files', f);
+    $('pfAddBtn').classList.add('busy');
+    try {
+      const res = await fetch(`/api/photographers/${me.id}/portfolio`, { method: 'POST', body: fd });
+      const data = await res.json();
+      editPortfolio = data.portfolio;
+      renderPortfolio();
+      toast(`${data.added.length}枚を追加しました`);
+    } catch (err) { toast('アップロード失敗'); }
+    $('pfAddBtn').classList.remove('busy');
+    e.target.value = '';
+  }
+});
+
+$('editProfileBtn').addEventListener('click', () => {
+  if (!myProfile) { toast('プロフィールを読み込み中です'); return; }
+  enterProfile();
+});
+
+$('profileBackBtn').addEventListener('click', () => { loadMyProfile(); show('step-standby'); });
+
+$('saveProfileBtn').addEventListener('click', async () => {
+  $('saveProfileBtn').disabled = true;
+  $('saveProfileBtn').innerHTML = '保存中…';
+  try {
+    await api(`/api/photographers/${me.id}/profile`, 'POST', {
+      name: $('epName').value.trim(),
+      bio: $('epBio').value.trim(),
+      specialty: editTags.join(','),
+      portfolio: editPortfolio,
+    });
+    if ($('epName').value.trim()) { me.name = $('epName').value.trim(); store('photographer', me); }
+    await loadMyProfile();
+    toast('プロフィールを保存しました');
+    show('step-standby');
+  } catch (e) {
+    toast('保存エラー: ' + e.message);
+  }
+  $('saveProfileBtn').disabled = false;
+  $('saveProfileBtn').innerHTML = `${icon('check', 18)} 保存する`;
+});
 
 $('toggleBtn').addEventListener('click', async () => {
   online = !online;

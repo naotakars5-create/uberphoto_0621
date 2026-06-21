@@ -20,7 +20,22 @@ APP_BASE_URL = os.environ.get("APP_BASE_URL")  # e.g. https://uberphoto.onrender
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
+PROFILE_DIR = os.path.join(UPLOAD_DIR, "profile")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(PROFILE_DIR, exist_ok=True)
+
+
+async def _save_profile_image(pid: int, file: UploadFile) -> str:
+    """Save an uploaded profile/portfolio image and return its public URL."""
+    d = os.path.join(PROFILE_DIR, str(pid))
+    os.makedirs(d, exist_ok=True)
+    ext = os.path.splitext(file.filename or "")[1].lower() or ".jpg"
+    if ext not in (".jpg", ".jpeg", ".png", ".webp", ".gif"):
+        ext = ".jpg"
+    fname = f"{uuid.uuid4().hex}{ext}"
+    with open(os.path.join(d, fname), "wb") as out:
+        out.write(await file.read())
+    return f"/uploads/profile/{pid}/{fname}"
 
 PLANS = {
     "light": {"label": "ライト 15枚", "shots": 15, "minutes": 30, "price": 3278},      # 2,980 税別
@@ -138,10 +153,18 @@ def photographer_bio(row):
     return BIOS[row["id"] % len(BIOS)]
 
 
+def parse_portfolio(row):
+    try:
+        return json.loads(row["portfolio"]) if row["portfolio"] else []
+    except (ValueError, TypeError):
+        return []
+
+
 def photographer_view(row, origin=None):
     pid = row["id"]
-    # portfolio: 6 people photos, rotated by id so each photographer differs
-    portfolio = [WORK_THUMBS[(pid + i) % len(WORK_THUMBS)] for i in range(6)]
+    # portfolio: the photographer's own uploads if any, else 6 rotated samples
+    own = parse_portfolio(row)
+    portfolio = own if own else [WORK_THUMBS[(pid + i) % len(WORK_THUMBS)] for i in range(6)]
     # distance: real haversine if we know both ends, else a stable fallback
     if origin and row["lat"] is not None and row["lng"] is not None:
         dist = round(haversine_km(origin, (row["lat"], row["lng"])), 1)
@@ -156,7 +179,7 @@ def photographer_view(row, origin=None):
         "tags": [t for t in (row["specialty"] or "").split(",") if t],
         "thumb": row["thumb"] or WORK_THUMBS[pid % len(WORK_THUMBS)],
         "portfolio": portfolio,
-        "bio": photographer_bio(row),
+        "bio": (row["bio"] or "").strip() or photographer_bio(row),
         "reviews": merged_reviews(pid),
         "distance_km": dist,
         "eta_min": eta,
@@ -288,6 +311,80 @@ def set_status(pid: int, payload: dict):
     with db() as conn:
         conn.execute("UPDATE photographers SET status=? WHERE id=?", (status, pid))
     return {"id": pid, "status": status}
+
+
+# ---------------- API: photographer profile ----------------
+@app.get("/api/photographers/{pid}")
+def get_photographer(pid: int):
+    """The photographer's own editable profile + stats + received reviews."""
+    with db() as conn:
+        row = conn.execute("SELECT * FROM photographers WHERE id=?", (pid,)).fetchone()
+        if not row:
+            raise HTTPException(404, "photographer not found")
+        rc = conn.execute("SELECT COUNT(*) c FROM reviews WHERE photographer_id=?", (pid,)).fetchone()["c"]
+    return {
+        "id": pid,
+        "name": row["name"],
+        "phone": row["phone"],
+        "bio": row["bio"] or "",
+        "specialty": row["specialty"] or "",
+        "tags": [t for t in (row["specialty"] or "").split(",") if t],
+        "thumb": row["thumb"],
+        "portfolio": parse_portfolio(row),
+        "rating": row["rating"],
+        "shots": row["shots"],
+        "review_count": rc,
+        "reviews": real_reviews(pid, 20),
+    }
+
+
+class ProfileIn(BaseModel):
+    name: Optional[str] = None
+    bio: Optional[str] = None
+    specialty: Optional[str] = None        # comma-joined tags
+    portfolio: Optional[list[str]] = None  # full list (enables remove/reorder)
+
+
+@app.post("/api/photographers/{pid}/profile")
+def update_profile(pid: int, p: ProfileIn):
+    sets, vals = [], []
+    if p.name is not None and p.name.strip():
+        sets.append("name=?"); vals.append(p.name.strip())
+    if p.bio is not None:
+        sets.append("bio=?"); vals.append(p.bio.strip())
+    if p.specialty is not None:
+        sets.append("specialty=?"); vals.append(p.specialty.strip())
+    if p.portfolio is not None:
+        sets.append("portfolio=?"); vals.append(json.dumps(p.portfolio, ensure_ascii=False))
+    if not sets:
+        return {"ok": True}
+    vals.append(pid)
+    with db() as conn:
+        cur = conn.execute(f"UPDATE photographers SET {', '.join(sets)} WHERE id=?", vals)
+        if cur.rowcount == 0:
+            raise HTTPException(404, "photographer not found")
+    return {"ok": True}
+
+
+@app.post("/api/photographers/{pid}/avatar")
+async def upload_avatar(pid: int, file: UploadFile = File(...)):
+    url = await _save_profile_image(pid, file)
+    with db() as conn:
+        conn.execute("UPDATE photographers SET thumb=? WHERE id=?", (url, pid))
+    return {"thumb": url}
+
+
+@app.post("/api/photographers/{pid}/portfolio")
+async def upload_portfolio(pid: int, files: list[UploadFile] = File(...)):
+    urls = [await _save_profile_image(pid, f) for f in files]
+    with db() as conn:
+        row = conn.execute("SELECT portfolio FROM photographers WHERE id=?", (pid,)).fetchone()
+        if not row:
+            raise HTTPException(404, "photographer not found")
+        cur = parse_portfolio(row)
+        cur.extend(urls)
+        conn.execute("UPDATE photographers SET portfolio=? WHERE id=?", (json.dumps(cur, ensure_ascii=False), pid))
+    return {"portfolio": cur, "added": urls}
 
 
 # ---------------- API: order + payment ----------------

@@ -44,6 +44,8 @@ def init_db():
                 shots INTEGER DEFAULT 0,
                 specialty TEXT,
                 thumb TEXT,
+                bio TEXT,
+                portfolio TEXT,
                 lat REAL,
                 lng REAL,
                 is_demo INTEGER NOT NULL DEFAULT 0,
@@ -111,3 +113,6 @@ def init_db():
         _ensure_column(conn, "requests", "scene", "scene TEXT")
         _ensure_column(conn, "requests", "note", "note TEXT")
         _ensure_column(conn, "requests", "reviewed", "reviewed INTEGER NOT NULL DEFAULT 0")
+        # photographer self-service profile (bio + own portfolio)
+        _ensure_column(conn, "photographers", "bio", "bio TEXT")
+        _ensure_column(conn, "photographers", "portfolio", "portfolio TEXT")
