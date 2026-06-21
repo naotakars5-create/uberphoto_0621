@@ -11,9 +11,20 @@ const $ = (id) => document.getElementById(id);
 let etaTimer = null;
 
 function show(step) {
-  ['step-plan', 'step-select', 'step-arriving', 'step-matched'].forEach((s) => $(s).classList.add('hidden'));
+  ['step-plan', 'step-confirm', 'step-select', 'step-arriving', 'step-matched'].forEach((s) => $(s).classList.add('hidden'));
   $(step).classList.remove('hidden');
   window.scrollTo(0, 0);
+}
+
+// progress stepper: n=1 マッチ, 2 向かう, 3 撮影, 4 お届け, 5 完了(all done)
+function setStage(n) {
+  document.querySelectorAll('.stepper').forEach((st) => {
+    st.querySelectorAll('.st-node').forEach((node, i) => {
+      node.classList.remove('done', 'active');
+      if (i < n - 1) node.classList.add('done');
+      else if (i === n - 1) node.classList.add('active');
+    });
+  });
 }
 
 const PLAN_THUMBS = { light: 'strip2', standard: 'strip3', premium: 'strip4' };
@@ -49,25 +60,56 @@ function selectPlan(key, el) {
   validate();
 }
 
+// updates the sticky CTA summary + enabled state
 function validate() {
-  $('toPay').disabled = !(selectedPlan && $('name').value.trim());
+  if (!selectedPlan) {
+    $('ctaPlan').textContent = 'プランを選択してください';
+    $('ctaPrice').textContent = '—';
+    $('toPay').disabled = true;
+    return;
+  }
+  const p = plans[selectedPlan];
+  $('ctaPrice').innerHTML = `¥${p.price.toLocaleString('ja-JP')}<span class="tax">税込</span>`;
+  if (!$('name').value.trim()) {
+    $('ctaPlan').textContent = 'お名前を入力してください';
+    $('toPay').disabled = true;
+  } else {
+    $('ctaPlan').textContent = `${p.label.split(' ')[0]} · ${p.minutes}分/${p.shots}枚`;
+    $('toPay').disabled = false;
+  }
 }
 $('name').addEventListener('input', validate);
 
-$('toPay').addEventListener('click', async () => {
-  $('toPay').disabled = true;
-  $('toPay').innerHTML = '決済処理中…';
+$('toPay').addEventListener('click', () => showConfirm());
+
+function showConfirm() {
+  const p = plans[selectedPlan];
+  const base = Math.round(p.price / 1.1);
+  const tax = p.price - base;
+  $('cf-plan').textContent = p.label.split(' ')[0];
+  $('cf-shots').textContent = p.shots + '枚';
+  $('cf-min').textContent = p.minutes + '分';
+  $('cf-loc').textContent = $('location').value.trim() || '浅草エリア';
+  $('cf-name').textContent = $('name').value.trim();
+  $('cf-base').textContent = '¥' + base.toLocaleString('ja-JP');
+  $('cf-tax').textContent = '¥' + tax.toLocaleString('ja-JP');
+  $('cf-total').textContent = '¥' + p.price.toLocaleString('ja-JP');
+  show('step-confirm');
+}
+
+$('confirmBack').addEventListener('click', () => show('step-plan'));
+
+$('confirmPay').addEventListener('click', async () => {
+  $('confirmPay').disabled = true;
+  $('confirmPay').innerHTML = '決済処理中…';
   try {
     const pay = await api('/api/checkout', 'POST', { plan: selectedPlan });
-    if (pay.mode === 'stripe' && pay.checkout_url) {
-      window.location = pay.checkout_url;
-      return;
-    }
+    if (pay.mode === 'stripe' && pay.checkout_url) { window.location = pay.checkout_url; return; }
     await createRequest(pay.stripe_id);
   } catch (e) {
     toast('エラー: ' + e.message);
-    $('toPay').disabled = false;
-    $('toPay').innerHTML = '決済して撮影を依頼 ' + icon('arrow', 19);
+    $('confirmPay').disabled = false;
+    $('confirmPay').innerHTML = 'この内容で決済して依頼 ' + icon('arrow', 19);
   }
 });
 
@@ -88,28 +130,57 @@ async function createRequest(paymentId) {
   await showSelect();
 }
 
+const SKELETON = Array(3).fill(
+  '<div class="skel-card"><div class="skel-top"><div class="skel skel-thumb"></div>' +
+  '<div style="flex:1"><div class="skel skel-line" style="width:45%"></div>' +
+  '<div class="skel skel-line" style="width:72%"></div>' +
+  '<div class="skel skel-line" style="width:38%"></div></div></div></div>'
+).join('');
+
 async function showSelect() {
   show('step-select');
   const wrap = $('photographers');
-  wrap.innerHTML = '<p class="muted">近くのカメラマンを探しています…</p>';
+  wrap.innerHTML = SKELETON;
   let q = '';
   if (customerPos) q = `?lat=${customerPos.lat}&lng=${customerPos.lng}`;
-  try { nearbyList = await api('/api/photographers/nearby' + q); } catch (e) { nearbyList = []; }
-  $('nearCount').textContent = `近くに${nearbyList.length}人`;
+  let errored = false;
+  try { nearbyList = await api('/api/photographers/nearby' + q); } catch (e) { errored = true; nearbyList = []; }
+  $('nearCount').textContent = errored ? '通信エラー' : `近くに${nearbyList.length}人`;
 
-  // omakase = closest (list is sorted by distance)
   const omakaseBtn = $('omakaseBtn');
-  if (nearbyList.length) {
+  const hasList = nearbyList.length > 0;
+  // toggle omakase + "または指名" divider with availability
+  omakaseBtn.style.display = hasList ? '' : 'none';
+  $('orRow').style.display = hasList ? '' : 'none';
+
+  if (hasList) {
     const best = nearbyList[0];
     $('omakaseDesc').textContent = `最短 ${best.name} さん・約${best.eta_min}分でお迎え`;
-    omakaseBtn.style.display = '';
     omakaseBtn.onclick = () => choosePhotographer(best);
-  } else {
-    omakaseBtn.style.display = 'none';
   }
 
-  if (!nearbyList.length) {
-    wrap.innerHTML = '<p class="muted">いま近くに待機中のカメラマンがいません。少し待って再度お試しください。</p>';
+  if (errored) {
+    wrap.innerHTML = `
+      <div class="empty-state">
+        <div class="es-ic">${icon('zap', 30)}</div>
+        <div class="es-title">通信エラーが発生しました</div>
+        <div class="es-desc">ネットワーク環境をご確認のうえ、もう一度お試しください。</div>
+        <button class="btn brand" id="retryNearby">${icon('refresh', 18)} 再読み込み</button>
+      </div>`;
+    $('retryNearby').onclick = showSelect;
+    return;
+  }
+  if (!hasList) {
+    wrap.innerHTML = `
+      <div class="empty-state">
+        <div class="es-ic">${icon('map', 30)}</div>
+        <div class="es-title">いま近くに待機中のカメラマンがいません</div>
+        <div class="es-desc">土日 14:00–18:00 の混雑時間は見つかりやすくなります。少し時間をおいて再検索してください。</div>
+        <button class="btn brand" id="retryNearby">${icon('refresh', 18)} もう一度さがす</button>
+        <button class="btn secondary" id="notifyNearby">空き次第、通知を受け取る</button>
+      </div>`;
+    $('retryNearby').onclick = showSelect;
+    $('notifyNearby').onclick = () => { requestNotifyPermission(); toast('カメラマンが見つかったら通知します'); };
     return;
   }
   wrap.innerHTML = '';
@@ -212,6 +283,7 @@ function onMatched(p, token) {
   notify('UberPHOTO', `${p.name}さんが向かっています`);
   startEta(p.eta_min || 3);
   show('step-arriving');
+  setStage(2);
   listenForPhotos();
 }
 
@@ -239,6 +311,9 @@ function listenForPhotos() {
     if (msg.type === 'photos_uploaded') {
       clearInterval(etaTimer);
       show('step-matched');
+      setStage(3);
+      setTimeout(() => setStage(4), 900);
+      $('matchedTitle').textContent = '写真が届きました';
       $('shotStatus').textContent = `📸 ${msg.count}枚 届きました`;
       galleryToken = msg.gallery_token;
       $('toGallery').href = `/gallery?token=${galleryToken}`;
@@ -246,6 +321,8 @@ function listenForPhotos() {
       notify('UberPHOTO', `写真が${msg.count}枚届きました`);
     } else if (msg.type === 'session_complete') {
       show('step-matched');
+      setStage(5);
+      $('matchedTitle').textContent = '撮影完了';
       $('shotStatus').textContent = '✅ 撮影完了';
       notify('UberPHOTO', '撮影が完了しました。写真を確認しましょう。');
     }
@@ -265,11 +342,11 @@ $('reselectBtn').addEventListener('click', async () => {
 });
 
 $('cancelReqBtn').addEventListener('click', async () => {
+  if (!confirm('この依頼をキャンセルしますか？')) return;
   await cancelMatch();
   toast('依頼をキャンセルしました');
   show('step-plan');
-  $('toPay').disabled = false;
-  $('toPay').innerHTML = '決済して撮影を依頼 ' + icon('arrow', 19);
+  validate();
 });
 
 $('backToPlan').addEventListener('click', () => {

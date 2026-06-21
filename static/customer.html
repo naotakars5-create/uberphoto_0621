@@ -14,7 +14,8 @@
 <body>
   <div class="app">
     <div class="topbar">
-      <div class="logo"><span class="u">Uber</span>PHOTO</div>
+      <a class="navback" href="/" aria-label="ホームに戻る"><i data-icon="back" data-size="18"></i></a>
+      <a class="logo" href="/"><span class="u">Uber</span>PHOTO</a>
       <div class="badge">Guest</div>
     </div>
 
@@ -36,8 +37,6 @@
       <input type="text" id="name" placeholder="例：たろう" />
       <label>撮影スポット</label>
       <input type="text" id="location" placeholder="例：浅草寺 雷門前" />
-
-      <button class="btn brand" id="toPay" disabled>決済して撮影を依頼 <i data-icon="arrow" data-size="19"></i></button>
 
       <!-- what's included -->
       <div class="section">
@@ -61,6 +60,41 @@
           <div class="duo"><img src="/static/img/work5.jpg" alt=""></div>
         </div>
       </div>
+
+      <!-- sticky order CTA -->
+      <div class="cta-bar">
+        <div class="cta-inner">
+          <div class="cta-summary">
+            <div class="cta-plan" id="ctaPlan">プランを選択してください</div>
+            <div class="cta-price" id="ctaPrice">—</div>
+          </div>
+          <button class="btn brand" id="toPay" disabled>依頼する <i data-icon="arrow" data-size="18"></i></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 1.5: order confirmation -->
+    <section id="step-confirm" class="hidden">
+      <p class="eyebrow">Confirm</p>
+      <h1>ご依頼内容の確認</h1>
+      <p class="sub">内容をご確認ください。お支払いは確定後です。</p>
+      <div class="card summary">
+        <div class="sum-row"><span>プラン</span><b id="cf-plan"></b></div>
+        <div class="sum-row"><span>枚数</span><b id="cf-shots"></b></div>
+        <div class="sum-row"><span>撮影時間</span><b id="cf-min"></b></div>
+        <div class="sum-row"><span>撮影スポット</span><b id="cf-loc"></b></div>
+        <div class="sum-row"><span>お名前</span><b id="cf-name"></b></div>
+        <hr class="divider">
+        <div class="sum-row"><span>小計（税抜）</span><span id="cf-base"></span></div>
+        <div class="sum-row"><span>消費税 (10%)</span><span id="cf-tax"></span></div>
+        <div class="sum-row total"><span>合計</span><b id="cf-total"></b></div>
+      </div>
+      <div class="chips" style="margin-bottom:6px">
+        <span class="chip"><i data-icon="zap" data-size="15"></i>レタッチ不要・即共有</span>
+        <span class="chip"><i data-icon="image" data-size="15"></i>全データお渡し</span>
+      </div>
+      <button class="btn brand" id="confirmPay">この内容で決済して依頼 <i data-icon="arrow" data-size="19"></i></button>
+      <button class="btn secondary" id="confirmBack">内容を修正する</button>
     </section>
 
     <!-- STEP 2: select photographer -->
@@ -75,7 +109,7 @@
         <i data-icon="arrow" data-size="18"></i>
       </button>
 
-      <div class="or-row"><span>または、指名して選ぶ</span></div>
+      <div class="or-row" id="orRow"><span>または、指名して選ぶ</span></div>
 
       <div id="photographers"></div>
       <button class="btn secondary" id="backToPlan">プラン選択に戻る</button>
@@ -92,6 +126,16 @@
       <p class="eyebrow">On the way</p>
       <h1 id="arriveTitle">向かっています</h1>
       <p class="sub" id="arriveSub">カメラマンがお迎えに向かっています</p>
+
+      <div class="stepper">
+        <div class="st-node"><span class="st-dot"></span><span class="st-lab">マッチ</span></div>
+        <div class="st-bar"></div>
+        <div class="st-node"><span class="st-dot"></span><span class="st-lab">向かう</span></div>
+        <div class="st-bar"></div>
+        <div class="st-node"><span class="st-dot"></span><span class="st-lab">撮影</span></div>
+        <div class="st-bar"></div>
+        <div class="st-node"><span class="st-dot"></span><span class="st-lab">お届け</span></div>
+      </div>
 
       <div class="map-card">
         <svg viewBox="0 0 400 232" preserveAspectRatio="xMidYMid slice" class="map-svg">
@@ -145,8 +189,19 @@
 
     <!-- STEP 3: matched / photos -->
     <section id="step-matched" class="hidden">
-      <p class="eyebrow">Matched</p>
-      <h1>マッチしました 🎉</h1>
+      <p class="eyebrow">Delivery</p>
+      <h1 id="matchedTitle">写真が届きます</h1>
+
+      <div class="stepper">
+        <div class="st-node"><span class="st-dot"></span><span class="st-lab">マッチ</span></div>
+        <div class="st-bar"></div>
+        <div class="st-node"><span class="st-dot"></span><span class="st-lab">向かう</span></div>
+        <div class="st-bar"></div>
+        <div class="st-node"><span class="st-dot"></span><span class="st-lab">撮影</span></div>
+        <div class="st-bar"></div>
+        <div class="st-node"><span class="st-dot"></span><span class="st-lab">お届け</span></div>
+      </div>
+
       <div class="card photographer-card">
         <div class="avatar" id="pAvatar">?</div>
         <div style="flex:1">

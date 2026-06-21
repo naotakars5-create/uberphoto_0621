@@ -53,7 +53,7 @@
 
     <!-- featured photographers -->
     <div class="section">
-      <div class="section-head"><h2>近くのカメラマン</h2><span class="more">すべて見る ›</span></div>
+      <div class="section-head"><h2>近くのカメラマン</h2><a class="more" href="/customer" style="text-decoration:none">すべて見る ›</a></div>
       <div class="hscroll">
         <div class="ph-card">
           <img class="thumb" src="/static/img/work1.jpg" alt="">
@@ -111,9 +111,77 @@
       <div class="chev"><i data-icon="chevron" data-size="18"></i></div>
     </a>
 
+    <!-- PWA install banner -->
+    <div id="installBanner" class="install-banner hidden">
+      <div class="ib-ic"><i data-icon="download" data-size="20"></i></div>
+      <div class="ib-t"><b>UberPHOTO</b> をホーム画面に追加して、アプリのように使えます。</div>
+      <button id="installBtn">追加</button>
+      <button class="ib-close" id="installClose" aria-label="閉じる">×</button>
+    </div>
+
     <p class="footnote center">浅草エリア ／ 土日 14:00–18:00 試験運用中</p>
   </div>
+
+  <!-- first-run onboarding -->
+  <div id="onb" class="onb hidden">
+    <button class="onb-skip" id="onbSkip">スキップ</button>
+    <div class="onb-slides" id="onbSlides">
+      <div class="onb-slide"><div class="onb-art"><i data-icon="camera" data-size="56"></i></div><h2>旅の一瞬を、作品に。</h2><p>観光地で、近くのプロカメラマンにその場で撮影を依頼できます。</p></div>
+      <div class="onb-slide"><div class="onb-art"><i data-icon="zap" data-size="56"></i></div><h2>選んで、数分でお迎え。</h2><p>近くの2〜3人から選ぶか「おまかせ」で最短のプロに。地図で到着までわかります。</p></div>
+      <div class="onb-slide"><div class="onb-art"><i data-icon="image" data-size="56"></i></div><h2>撮ってすぐ受け取り。</h2><p>レタッチ不要。その場で全データを受け取り、アプリでかんたん編集も。</p></div>
+    </div>
+    <div class="onb-foot">
+      <div class="onb-dots"><i class="on"></i><i></i><i></i></div>
+      <button class="btn brand" id="onbNext">次へ</button>
+    </div>
+  </div>
+
   <script src="/static/js/icons.js"></script>
   <script src="/static/js/common.js"></script>
+  <script>
+  (function () {
+    // ---- onboarding (shown once) ----
+    const onb = document.getElementById('onb');
+    if (!localStorage.getItem('uphoto_onboarded')) {
+      onb.classList.remove('hidden');
+      let idx = 0; const total = 3;
+      const slides = document.getElementById('onbSlides');
+      const dots = onb.querySelectorAll('.onb-dots i');
+      const next = document.getElementById('onbNext');
+      const render = () => {
+        slides.style.transform = `translateX(${-idx * 100}%)`;
+        dots.forEach((d, i) => d.classList.toggle('on', i === idx));
+        next.textContent = idx === total - 1 ? 'はじめる' : '次へ';
+      };
+      const finish = () => { localStorage.setItem('uphoto_onboarded', '1'); onb.classList.add('hidden'); };
+      next.onclick = () => { if (idx < total - 1) { idx++; render(); } else finish(); };
+      document.getElementById('onbSkip').onclick = finish;
+      render();
+    }
+
+    // ---- PWA install prompt ----
+    let deferred = null;
+    const banner = document.getElementById('installBanner');
+    const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    const dismissed = localStorage.getItem('uphoto_install_dismissed');
+    if (!standalone && !dismissed) {
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault(); deferred = e; banner.classList.remove('hidden');
+      });
+      if (/iphone|ipad|ipod/i.test(navigator.userAgent)) {
+        banner.querySelector('.ib-t').innerHTML = '<b>UberPHOTO</b> は共有メニューの「ホーム画面に追加」でアプリのように使えます。';
+        document.getElementById('installBtn').style.display = 'none';
+        banner.classList.remove('hidden');
+      }
+    }
+    document.getElementById('installBtn').onclick = async () => {
+      if (!deferred) return;
+      deferred.prompt(); await deferred.userChoice; deferred = null; banner.classList.add('hidden');
+    };
+    document.getElementById('installClose').onclick = () => {
+      banner.classList.add('hidden'); localStorage.setItem('uphoto_install_dismissed', '1');
+    };
+  })();
+  </script>
 </body>
 </html>
