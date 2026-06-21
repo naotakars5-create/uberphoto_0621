@@ -5,10 +5,14 @@ services:
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers
     envVars:
       - key: PYTHON_VERSION
         value: "3.12.7"
-      # Uncomment and set in the Render dashboard to enable real payments:
-      # - key: STRIPE_SECRET_KEY
-      #   sync: false
+      # Public base URL (used to build Stripe return URLs). Update if the host changes.
+      - key: APP_BASE_URL
+        value: "https://uberphoto.onrender.com"
+      # Set this in the Render dashboard to enable real payments (sk_test_... then sk_live_...).
+      # While unset, the app runs in stub mode (payment auto-succeeds).
+      - key: STRIPE_SECRET_KEY
+        sync: false

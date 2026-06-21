@@ -59,6 +59,28 @@ git push -u origin main
 - ファイルシステムは**揮発性**（再デプロイ/再起動で `uberphoto.db` と `uploads/` がリセット）。デモ用途は問題なし。
 - 永続化するには Render の Persistent Disk（有料）か、DBをManaged Postgres、写真をS3/R2へ。
 
+## 決済（Stripe）を有効化する
+
+キー未設定なら **stubモード**（決済は自動成功）。キーを入れると本物の **Stripe Checkout** に切り替わります。
+
+### 流れ
+`プラン → 確認 → /api/orders（requestを pending_payment で作成）→ Stripe Checkoutへ遷移 → 支払い → /customer?session_id=... に戻る → /api/payments/verify で支払い確認 → request を waiting に → カメラマン選択へ`
+
+### テスト決済を通す手順
+1. https://stripe.com でアカウント作成 → ダッシュボード右上が **「テスト環境」** の状態で **APIキー（`sk_test_...`）** をコピー
+2. Render → 対象サービス → **Environment** → 追加：
+   - `STRIPE_SECRET_KEY` = `sk_test_...`
+   - `APP_BASE_URL` = 公開URL（例 `https://uberphoto.onrender.com`）※render.yamlに既定値あり
+   保存すると自動再デプロイ
+3. 公開サイトで プラン選択 → 確認 → 「決済して依頼」 → **Stripeの決済画面**へ
+4. テストカード **`4242 4242 4242 4242`**／有効期限=未来の任意月／CVC=任意3桁／郵便番号=任意 で支払い
+5. 自動でサイトに戻り、支払い確認後にカメラマン選択へ進めばOK
+
+### 本番（実際に課金）にするには
+- Stripeアカウントの**本人確認/有効化**を完了 → 本番キー `sk_live_...` に差し替え
+- **特定商取引法に基づく表記**・利用規約・キャンセル/返金ポリシーを掲載
+- カメラマンへの自動送金が必要なら **Stripe Connect**（集金→手数料控除→送金）を実装
+
 ## 本番化の次ステップ
 - `STRIPE_SECRET_KEY` を設定して実決済へ
 - 写真ストレージを S3 / Cloudflare R2、DBを Postgres へ

@@ -1,4 +1,4 @@
-const CACHE = 'uberphoto-v8';
+const CACHE = 'uberphoto-v9';
 const SHELL = [
   '/',
   '/static/css/app.css',

@@ -6,14 +6,16 @@ import asyncio
 import shutil
 from typing import Optional
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, Form, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from .db import db, init_db
 from .matching import manager
-from .payments import create_payment
+from .payments import create_checkout, retrieve_session, stripe_enabled
+
+APP_BASE_URL = os.environ.get("APP_BASE_URL")  # e.g. https://uberphoto.onrender.com
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
@@ -265,55 +267,75 @@ def set_status(pid: int, payload: dict):
     return {"id": pid, "status": status}
 
 
-# ---------------- API: payment + request ----------------
-class CheckoutIn(BaseModel):
+# ---------------- API: order + payment ----------------
+class OrderIn(BaseModel):
     plan: str
-
-
-@app.post("/api/checkout")
-def checkout(c: CheckoutIn):
-    plan = PLANS.get(c.plan)
-    if not plan:
-        raise HTTPException(400, "invalid plan")
-    result = create_payment(
-        amount=plan["price"],
-        plan=plan["label"],
-        success_url="/customer?paid=1",
-        cancel_url="/customer",
-    )
-    with db() as conn:
-        conn.execute(
-            "INSERT INTO payments (amount, status, stripe_id) VALUES (?, ?, ?)",
-            (plan["price"], result["status"], result["stripe_id"]),
-        )
-    return result
-
-
-class RequestIn(BaseModel):
     customer_name: str
-    plan: str
     location: Optional[str] = None
     lat: Optional[float] = None
     lng: Optional[float] = None
-    payment_id: Optional[str] = None
 
 
-@app.post("/api/requests")
-async def create_request(r: RequestIn):
-    plan = PLANS.get(r.plan)
+@app.post("/api/orders")
+async def create_order(o: OrderIn, request: Request):
+    """Create a request and start payment.
+
+    - Stripe mode: request is 'pending_payment'; returns a Checkout URL. The
+      request becomes 'waiting' only after /api/payments/verify confirms payment.
+    - Stub mode (no key): payment auto-succeeds and the request is 'waiting'.
+    """
+    plan = PLANS.get(o.plan)
     if not plan:
         raise HTTPException(400, "invalid plan")
     with db() as conn:
         cur = conn.execute(
             """INSERT INTO requests (customer_name, plan, price, location, lat, lng, status)
-               VALUES (?, ?, ?, ?, ?, ?, 'waiting')""",
-            (r.customer_name, r.plan, plan["price"], r.location, r.lat, r.lng),
+               VALUES (?, ?, ?, ?, ?, ?, 'pending_payment')""",
+            (o.customer_name, o.plan, plan["price"], o.location, o.lat, o.lng),
         )
         rid = cur.lastrowid
 
-    # No broadcast: the customer now picks a photographer from the nearby list.
+    base_url = (APP_BASE_URL or str(request.base_url)).rstrip("/")
+    pay = create_checkout(plan["price"], plan["label"], base_url, rid)
+
+    with db() as conn:
+        conn.execute(
+            "INSERT INTO payments (request_id, amount, status, stripe_id) VALUES (?, ?, ?, ?)",
+            (rid, plan["price"], "pending" if pay["mode"] == "stripe" else "paid", pay.get("stripe_id")),
+        )
+
+    if pay["mode"] == "stripe":
+        return {"mode": "stripe", "request_id": rid, "checkout_url": pay["checkout_url"]}
+
+    # stub: treat as paid immediately
+    with db() as conn:
+        conn.execute("UPDATE requests SET status='waiting' WHERE id=?", (rid,))
     await manager.broadcast_to_operators({"type": "stats_changed"})
-    return {"id": rid, "status": "waiting"}
+    return {"mode": "stub", "request_id": rid, "status": "waiting"}
+
+
+class VerifyIn(BaseModel):
+    session_id: str
+
+
+@app.post("/api/payments/verify")
+async def verify_payment(v: VerifyIn):
+    """Confirm a Stripe Checkout payment, then release the request to matching."""
+    if not stripe_enabled():
+        raise HTTPException(400, "stripe not configured")
+    try:
+        sess = retrieve_session(v.session_id)
+    except Exception as e:
+        raise HTTPException(400, f"invalid session: {e}")
+    meta = sess.get("metadata") or {}
+    rid = int(meta["request_id"]) if meta.get("request_id") else None
+    paid = sess.get("payment_status") == "paid"
+    if rid and paid:
+        with db() as conn:
+            conn.execute("UPDATE requests SET status='waiting' WHERE id=? AND status='pending_payment'", (rid,))
+            conn.execute("UPDATE payments SET status='paid' WHERE request_id=?", (rid,))
+        await manager.broadcast_to_operators({"type": "stats_changed"})
+    return {"paid": paid, "request_id": rid}
 
 
 @app.get("/api/requests/{rid}")

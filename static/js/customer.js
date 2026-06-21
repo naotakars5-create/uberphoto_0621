@@ -103,9 +103,23 @@ $('confirmPay').addEventListener('click', async () => {
   $('confirmPay').disabled = true;
   $('confirmPay').innerHTML = '決済処理中…';
   try {
-    const pay = await api('/api/checkout', 'POST', { plan: selectedPlan });
-    if (pay.mode === 'stripe' && pay.checkout_url) { window.location = pay.checkout_url; return; }
-    await createRequest(pay.stripe_id);
+    customerPos = await getPosition(); // captured before any Stripe redirect
+    const order = await api('/api/orders', 'POST', {
+      plan: selectedPlan,
+      customer_name: $('name').value.trim(),
+      location: $('location').value.trim() || '浅草エリア',
+      lat: customerPos ? customerPos.lat : null,
+      lng: customerPos ? customerPos.lng : null,
+    });
+    requestId = order.request_id;
+    store('lastRequestId', requestId);
+    if (order.mode === 'stripe' && order.checkout_url) {
+      window.location = order.checkout_url; // → Stripe Checkout, returns to /customer?session_id=...
+      return;
+    }
+    // stub mode (no Stripe key): already paid
+    requestNotifyPermission();
+    await showSelect();
   } catch (e) {
     toast('エラー: ' + e.message);
     $('confirmPay').disabled = false;
@@ -113,21 +127,30 @@ $('confirmPay').addEventListener('click', async () => {
   }
 });
 
-async function createRequest(paymentId) {
-  // best-effort location (used to rank/measure nearby photographers)
-  customerPos = await getPosition();
-  const req = await api('/api/requests', 'POST', {
-    customer_name: $('name').value.trim(),
-    plan: selectedPlan,
-    location: $('location').value.trim() || '浅草エリア',
-    lat: customerPos ? customerPos.lat : null,
-    lng: customerPos ? customerPos.lng : null,
-    payment_id: paymentId,
-  });
-  requestId = req.id;
-  store('lastRequestId', requestId);
-  requestNotifyPermission();
-  await showSelect();
+// resume after returning from Stripe Checkout
+async function handlePaymentReturn() {
+  const params = new URLSearchParams(location.search);
+  if (params.get('canceled')) {
+    history.replaceState({}, '', '/customer');
+    toast('決済をキャンセルしました');
+    return;
+  }
+  const sid = params.get('session_id');
+  if (!sid) return;
+  try {
+    const r = await api('/api/payments/verify', 'POST', { session_id: sid });
+    history.replaceState({}, '', '/customer');
+    if (r.paid) {
+      requestId = r.request_id;
+      requestNotifyPermission();
+      customerPos = await getPosition();
+      await showSelect();
+    } else {
+      toast('決済が確認できませんでした');
+    }
+  } catch (e) {
+    toast('決済確認エラー: ' + e.message);
+  }
 }
 
 const SKELETON = Array(3).fill(
@@ -352,8 +375,8 @@ $('cancelReqBtn').addEventListener('click', async () => {
 $('backToPlan').addEventListener('click', () => {
   if (photoSocket) photoSocket.close();
   show('step-plan');
-  $('toPay').disabled = false;
-  $('toPay').innerHTML = '決済して撮影を依頼 ' + icon('arrow', 19);
+  validate();
 });
 
 loadPlans();
+handlePaymentReturn();
