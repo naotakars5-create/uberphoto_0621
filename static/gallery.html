@@ -25,12 +25,13 @@
       <p class="sub" id="meta"></p>
       <div id="empty" class="card center muted hidden">まだ写真が届いていません。撮影が終わるとここに表示されます。</div>
       <div class="grid" id="grid"></div>
-      <div class="btn-row" id="actions" style="margin-top:20px">
-        <button class="btn brand" id="downloadAllBtn"><i data-icon="download" data-size="18"></i> 全部保存</button>
+      <button class="btn brand fav-save hidden" id="downloadFavBtn" style="margin-top:20px"><i data-icon="heart" data-size="18"></i> <span id="favCount">お気に入りを保存</span></button>
+      <div class="btn-row" id="actions" style="margin-top:12px">
+        <button class="btn secondary" id="downloadAllBtn"><i data-icon="download" data-size="18"></i> 全部保存</button>
         <button class="btn secondary" id="shareBtn"><i data-icon="share" data-size="18"></i> 共有</button>
       </div>
       <button class="btn secondary" id="refreshBtn" style="margin-top:12px"><i data-icon="refresh" data-size="18"></i> 更新</button>
-      <p class="muted center" style="font-size:12px;margin-top:14px">写真をタップすると、かんたん編集できます</p>
+      <p class="muted center" style="font-size:12px;margin-top:14px">ハートでお気に入り、タップでかんたん編集</p>
     </section>
 
     <!-- editor -->

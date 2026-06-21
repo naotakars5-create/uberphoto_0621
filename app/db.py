@@ -24,6 +24,13 @@ def db():
         conn.close()
 
 
+def _ensure_column(conn, table, column, ddl):
+    """Add a column if an older DB file predates it (SQLite has no IF NOT EXISTS for columns)."""
+    cols = [r["name"] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()]
+    if column not in cols:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {ddl}")
+
+
 def init_db():
     with db() as conn:
         conn.executescript(
@@ -86,5 +93,21 @@ def init_db():
                 stripe_id TEXT,
                 created_at TEXT NOT NULL DEFAULT (datetime('now'))
             );
+
+            CREATE TABLE IF NOT EXISTS reviews (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                photographer_id INTEGER NOT NULL,
+                request_id INTEGER,
+                author TEXT,
+                rating INTEGER NOT NULL,
+                text TEXT,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY (photographer_id) REFERENCES photographers(id)
+            );
             """
         )
+        # lightweight migrations for older DB files (extra request details)
+        _ensure_column(conn, "requests", "people", "people TEXT")
+        _ensure_column(conn, "requests", "scene", "scene TEXT")
+        _ensure_column(conn, "requests", "note", "note TEXT")
+        _ensure_column(conn, "requests", "reviewed", "reviewed INTEGER NOT NULL DEFAULT 0")

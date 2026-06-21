@@ -75,6 +75,29 @@ def synth_reviews(pid: int, count: int = 3):
     return out
 
 
+def real_reviews(pid: int, limit: int = 8):
+    """Reviews actually left by customers, newest first."""
+    with db() as conn:
+        rows = conn.execute(
+            "SELECT author, rating, text, created_at FROM reviews "
+            "WHERE photographer_id=? AND text IS NOT NULL AND text != '' "
+            "ORDER BY id DESC LIMIT ?",
+            (pid, limit),
+        ).fetchall()
+    return [
+        {"author": r["author"] or "ゲスト", "rating": r["rating"], "text": r["text"], "ago": "最近", "verified": True}
+        for r in rows
+    ]
+
+
+def merged_reviews(pid: int):
+    """Real customer reviews first, padded with samples so a profile never looks empty."""
+    real = real_reviews(pid)
+    if len(real) >= 3:
+        return real
+    return real + synth_reviews(pid, 3 - len(real))
+
+
 def haversine_km(a, b):
     (lat1, lng1), (lat2, lng2) = a, b
     r = 6371.0
@@ -134,7 +157,7 @@ def photographer_view(row, origin=None):
         "thumb": row["thumb"] or WORK_THUMBS[pid % len(WORK_THUMBS)],
         "portfolio": portfolio,
         "bio": photographer_bio(row),
-        "reviews": synth_reviews(pid),
+        "reviews": merged_reviews(pid),
         "distance_km": dist,
         "eta_min": eta,
         "is_demo": bool(row["is_demo"]),
@@ -274,6 +297,9 @@ class OrderIn(BaseModel):
     location: Optional[str] = None
     lat: Optional[float] = None
     lng: Optional[float] = None
+    people: Optional[str] = None   # e.g. "2人"
+    scene: Optional[str] = None    # e.g. "カップル,記念"
+    note: Optional[str] = None     # free-text request to the photographer
 
 
 @app.post("/api/orders")
@@ -289,9 +315,9 @@ async def create_order(o: OrderIn, request: Request):
         raise HTTPException(400, "invalid plan")
     with db() as conn:
         cur = conn.execute(
-            """INSERT INTO requests (customer_name, plan, price, location, lat, lng, status)
-               VALUES (?, ?, ?, ?, ?, ?, 'pending_payment')""",
-            (o.customer_name, o.plan, plan["price"], o.location, o.lat, o.lng),
+            """INSERT INTO requests (customer_name, plan, price, location, lat, lng, people, scene, note, status)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_payment')""",
+            (o.customer_name, o.plan, plan["price"], o.location, o.lat, o.lng, o.people, o.scene, o.note),
         )
         rid = cur.lastrowid
 
@@ -445,6 +471,9 @@ async def select_photographer(rid: int, s: SelectIn):
             "plan": plan.get("label", req["plan"]),
             "price": req["price"],
             "location": req["location"],
+            "people": req["people"],
+            "scene": req["scene"],
+            "note": req["note"],
         },
     )
     await manager.broadcast_to_operators({"type": "stats_changed"})
@@ -484,6 +513,40 @@ async def cancel_match(rid: int):
         await manager.send_to_photographer(pid, {"type": "cancelled", "request_id": rid})
     await manager.broadcast_to_operators({"type": "stats_changed"})
     return {"status": "waiting"}
+
+
+# ---------------- API: customer review ----------------
+class ReviewIn(BaseModel):
+    rating: int
+    text: Optional[str] = None
+
+
+@app.post("/api/requests/{rid}/review")
+def submit_review(rid: int, r: ReviewIn):
+    """Customer rates the photographer after a completed shoot."""
+    rating = max(1, min(5, int(r.rating)))
+    with db() as conn:
+        req = conn.execute(
+            "SELECT customer_name, photographer_id, reviewed FROM requests WHERE id=?", (rid,)
+        ).fetchone()
+        if not req:
+            raise HTTPException(404, "request not found")
+        if not req["photographer_id"]:
+            raise HTTPException(400, "no photographer to review")
+        if req["reviewed"]:
+            raise HTTPException(409, "already reviewed")
+        conn.execute(
+            "INSERT INTO reviews (photographer_id, request_id, author, rating, text) VALUES (?, ?, ?, ?, ?)",
+            (req["photographer_id"], rid, req["customer_name"], rating, (r.text or "").strip() or None),
+        )
+        conn.execute("UPDATE requests SET reviewed=1 WHERE id=?", (rid,))
+        # keep the photographer's headline rating fresh: blend prior rating with new one
+        ph = conn.execute("SELECT rating, shots FROM photographers WHERE id=?", (req["photographer_id"],)).fetchone()
+        if ph and ph["rating"] is not None:
+            prior, n = ph["rating"], max(20, ph["shots"] or 20)
+            blended = round((prior * n + rating) / (n + 1), 2)
+            conn.execute("UPDATE photographers SET rating=? WHERE id=?", (blended, req["photographer_id"]))
+    return {"ok": True}
 
 
 # ---------------- API: photo upload ----------------

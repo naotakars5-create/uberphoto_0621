@@ -5,10 +5,81 @@ let galleryToken = null;
 let photoSocket = null;
 let customerPos = null;
 let nearbyList = [];
+let selectedPeople = '';
+let selectedScenes = [];
+let matchedName = '';
 
 const $ = (id) => document.getElementById(id);
 
 let etaTimer = null;
+
+// Popular spots in the Asakusa trial area, with a best-light hint each.
+const SPOTS = [
+  { name: '雷門', hint: '午前は順光で顔が明るく写ります' },
+  { name: '仲見世通り', hint: '夕方は提灯に灯りが入って雰囲気◎' },
+  { name: '浅草寺 本堂', hint: '朝いちばんは人が少なく撮りやすい' },
+  { name: '五重塔', hint: '晴れた日中、青空と一緒に' },
+  { name: '隅田川テラス', hint: '夕暮れ〜夜景がいちばん映えます' },
+  { name: 'スカイツリー前', hint: '日没前後のマジックアワーが絶景' },
+];
+const PEOPLE_OPTS = ['1人', '2人', '3〜4人', '5人以上'];
+const SCENE_OPTS = ['記念', 'カップル', '家族', '友達', 'ソロ活', 'プロフィール'];
+
+function initDetails() {
+  // spot quick-pick
+  const sc = $('spotChips');
+  SPOTS.forEach((s) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'spot-chip';
+    b.textContent = s.name;
+    b.onclick = () => {
+      $('location').value = s.name;
+      document.querySelectorAll('.spot-chip').forEach((x) => x.classList.remove('on'));
+      b.classList.add('on');
+      $('spotHint').querySelector('span').textContent = s.hint;
+      validate();
+    };
+    sc.appendChild(b);
+  });
+
+  // people (single-select)
+  const pc = $('peopleChips');
+  PEOPLE_OPTS.forEach((p) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'opt-chip';
+    b.textContent = p;
+    b.onclick = () => {
+      const on = selectedPeople === p;
+      selectedPeople = on ? '' : p;
+      pc.querySelectorAll('.opt-chip').forEach((x) => x.classList.remove('on'));
+      if (!on) b.classList.add('on');
+    };
+    pc.appendChild(b);
+  });
+
+  // scene (multi-select)
+  const cc = $('sceneChips');
+  SCENE_OPTS.forEach((s) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'opt-chip';
+    b.textContent = s;
+    b.onclick = () => {
+      if (selectedScenes.includes(s)) {
+        selectedScenes = selectedScenes.filter((x) => x !== s);
+        b.classList.remove('on');
+      } else {
+        selectedScenes.push(s);
+        b.classList.add('on');
+      }
+    };
+    cc.appendChild(b);
+  });
+
+  hydrateIcons($('step-plan'));
+}
 
 function show(step) {
   ['step-plan', 'step-confirm', 'step-select', 'step-arriving', 'step-matched'].forEach((s) => $(s).classList.add('hidden'));
@@ -90,6 +161,14 @@ function showConfirm() {
   $('cf-shots').textContent = p.shots + '枚';
   $('cf-min').textContent = p.minutes + '分';
   $('cf-loc').textContent = $('location').value.trim() || '浅草エリア';
+  // optional details: hide the row when empty
+  const note = $('note').value.trim();
+  $('cf-people-row').style.display = selectedPeople ? '' : 'none';
+  $('cf-people').textContent = selectedPeople;
+  $('cf-scene-row').style.display = selectedScenes.length ? '' : 'none';
+  $('cf-scene').textContent = selectedScenes.join('・');
+  $('cf-note-row').style.display = note ? '' : 'none';
+  $('cf-note').textContent = note;
   $('cf-name').textContent = $('name').value.trim();
   $('cf-base').textContent = '¥' + base.toLocaleString('ja-JP');
   $('cf-tax').textContent = '¥' + tax.toLocaleString('ja-JP');
@@ -110,6 +189,9 @@ $('confirmPay').addEventListener('click', async () => {
       location: $('location').value.trim() || '浅草エリア',
       lat: customerPos ? customerPos.lat : null,
       lng: customerPos ? customerPos.lng : null,
+      people: selectedPeople || null,
+      scene: selectedScenes.join(',') || null,
+      note: $('note').value.trim() || null,
     });
     requestId = order.request_id;
     store('lastRequestId', requestId);
@@ -292,6 +374,7 @@ async function choosePhotographer(p) {
 
 function onMatched(p, token) {
   galleryToken = token;
+  matchedName = p.name || '';
   // arrival screen
   $('aName').textContent = p.name + ' さん';
   $('aAvatar').textContent = (p.name || '?').charAt(0);
@@ -348,6 +431,7 @@ function listenForPhotos() {
       $('matchedTitle').textContent = '撮影完了';
       $('shotStatus').textContent = '✅ 撮影完了';
       notify('UberPHOTO', '撮影が完了しました。写真を確認しましょう。');
+      openReview();
     }
   });
 }
@@ -378,5 +462,42 @@ $('backToPlan').addEventListener('click', () => {
   validate();
 });
 
+// ---------- post-shoot review ----------
+let reviewStars = 0;
+function paintStars() {
+  document.querySelectorAll('#starPick .star').forEach((b) => {
+    b.classList.toggle('on', Number(b.dataset.v) <= reviewStars);
+  });
+}
+function openReview() {
+  const card = $('reviewCard');
+  if (!card || card.dataset.done) return;
+  $('rvWho').textContent = matchedName ? `${matchedName} さんはいかがでしたか？` : 'カメラマンを評価しましょう';
+  card.classList.remove('hidden');
+}
+document.querySelectorAll('#starPick .star').forEach((b) => {
+  b.addEventListener('click', () => {
+    reviewStars = Number(b.dataset.v);
+    paintStars();
+    $('rvSubmit').disabled = false;
+  });
+});
+$('rvSubmit').addEventListener('click', async () => {
+  if (!reviewStars) return;
+  $('rvSubmit').disabled = true;
+  try {
+    await api(`/api/requests/${requestId}/review`, 'POST', { rating: reviewStars, text: $('rvText').value.trim() });
+    $('starPick').style.display = 'none';
+    $('rvText').style.display = 'none';
+    $('rvSubmit').style.display = 'none';
+    $('rvThanks').classList.remove('hidden');
+    $('reviewCard').dataset.done = '1';
+  } catch (e) {
+    toast('送信エラー: ' + e.message);
+    $('rvSubmit').disabled = false;
+  }
+});
+
+initDetails();
 loadPlans();
 handlePaymentReturn();

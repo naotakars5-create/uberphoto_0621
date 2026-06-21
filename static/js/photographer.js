@@ -69,6 +69,10 @@ function connect() {
         customer: msg.customer,
         plan: msg.plan,
         price: msg.price,
+        location: msg.location,
+        people: msg.people,
+        scene: msg.scene,
+        note: msg.note,
       };
       activeRequests = {};
       enterSession();
@@ -106,6 +110,18 @@ function enterSession() {
   $('sessAvatar').textContent = (session.customer || '?').charAt(0);
   $('sessCustomer').textContent = session.customer + ' さん';
   $('sessPlan').textContent = session.plan;
+  // shoot brief
+  $('briefLoc').textContent = session.location || '指定なし';
+  const peopleRow = $('briefPeopleRow');
+  if (session.people) { $('briefPeople').textContent = session.people; peopleRow.classList.remove('hidden'); }
+  else { peopleRow.classList.add('hidden'); }
+  const sceneRow = $('briefSceneRow');
+  if (session.scene) { $('briefScene').textContent = (session.scene || '').split(',').join('・'); sceneRow.classList.remove('hidden'); }
+  else { sceneRow.classList.add('hidden'); }
+  const noteRow = $('briefNoteRow');
+  if (session.note) { $('briefNote').textContent = session.note; noteRow.classList.remove('hidden'); }
+  else { noteRow.classList.add('hidden'); }
+  hydrateIcons($('sessBrief'));
   uploadedTotal = 0;
   $('uploadCount').textContent = '';
 }

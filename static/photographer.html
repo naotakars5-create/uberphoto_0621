@@ -83,6 +83,16 @@
           <div class="muted" id="sessPlan" style="font-size:13px"></div>
         </div>
       </div>
+
+      <!-- shoot brief from the customer -->
+      <div class="card brief" id="sessBrief">
+        <div class="section-head" style="margin-bottom:8px"><h2>撮影ブリーフ</h2></div>
+        <div class="brief-row" id="briefLocRow"><span class="bl"><i data-icon="pin" data-size="15"></i>場所</span><b id="briefLoc"></b></div>
+        <div class="brief-row" id="briefPeopleRow"><span class="bl"><i data-icon="user" data-size="15"></i>人数</span><b id="briefPeople"></b></div>
+        <div class="brief-row" id="briefSceneRow"><span class="bl"><i data-icon="heart" data-size="15"></i>シーン</span><b id="briefScene"></b></div>
+        <div class="brief-note hidden" id="briefNoteRow"><span class="bl"><i data-icon="edit" data-size="15"></i>要望</span><p id="briefNote"></p></div>
+      </div>
+
       <div class="card">
         <p style="margin-top:0;display:flex;align-items:center;gap:8px"><i data-icon="image" data-size="18" style="color:var(--brand2)"></i>撮影した写真を届けましょう</p>
         <input type="file" id="fileInput" accept="image/*" multiple capture="environment" style="margin:6px 0" />

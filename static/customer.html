@@ -35,8 +35,25 @@
 
       <label>お名前（ニックネーム可）</label>
       <input type="text" id="name" placeholder="例：たろう" />
+
       <label>撮影スポット</label>
+      <div class="spot-chips" id="spotChips"></div>
       <input type="text" id="location" placeholder="例：浅草寺 雷門前" />
+      <p class="spot-hint" id="spotHint"><i data-icon="sparkles" data-size="14"></i><span>スポットを選ぶと、きれいに撮れる時間帯のヒントが出ます</span></p>
+
+      <!-- shoot details -->
+      <div class="section">
+        <div class="section-head"><h2>撮影の詳細</h2><span class="more">任意</span></div>
+
+        <label class="mini-label"><i data-icon="user" data-size="14"></i> 人数</label>
+        <div class="opt-chips" id="peopleChips"></div>
+
+        <label class="mini-label"><i data-icon="heart" data-size="14"></i> シーン（複数選択OK）</label>
+        <div class="opt-chips" id="sceneChips"></div>
+
+        <label class="mini-label"><i data-icon="edit" data-size="14"></i> カメラマンへの要望</label>
+        <textarea id="note" rows="2" placeholder="例：赤いコートで雷門の前にいます／カップル写真メインで"></textarea>
+      </div>
 
       <!-- what's included -->
       <div class="section">
@@ -83,6 +100,9 @@
         <div class="sum-row"><span>枚数</span><b id="cf-shots"></b></div>
         <div class="sum-row"><span>撮影時間</span><b id="cf-min"></b></div>
         <div class="sum-row"><span>撮影スポット</span><b id="cf-loc"></b></div>
+        <div class="sum-row" id="cf-people-row"><span>人数</span><b id="cf-people"></b></div>
+        <div class="sum-row" id="cf-scene-row"><span>シーン</span><b id="cf-scene"></b></div>
+        <div class="sum-row" id="cf-note-row"><span>要望</span><b id="cf-note" style="text-align:right;max-width:60%"></b></div>
         <div class="sum-row"><span>お名前</span><b id="cf-name"></b></div>
         <hr class="divider">
         <div class="sum-row"><span>小計（税抜）</span><span id="cf-base"></span></div>
@@ -214,6 +234,24 @@
         <p id="shotStatus" class="big">📷</p>
       </div>
       <a class="btn brand hidden" id="toGallery">写真を見る <i data-icon="arrow" data-size="19"></i></a>
+
+      <!-- post-shoot review -->
+      <div class="card review-card hidden" id="reviewCard">
+        <div class="rv-head">
+          <h2>撮影はいかがでしたか？</h2>
+          <p class="muted" id="rvWho" style="margin:2px 0 0">カメラマンを評価しましょう</p>
+        </div>
+        <div class="star-pick" id="starPick" role="radiogroup" aria-label="星で評価">
+          <button type="button" class="star" data-v="1" aria-label="星1"><i data-icon="star" data-size="34"></i></button>
+          <button type="button" class="star" data-v="2" aria-label="星2"><i data-icon="star" data-size="34"></i></button>
+          <button type="button" class="star" data-v="3" aria-label="星3"><i data-icon="star" data-size="34"></i></button>
+          <button type="button" class="star" data-v="4" aria-label="星4"><i data-icon="star" data-size="34"></i></button>
+          <button type="button" class="star" data-v="5" aria-label="星5"><i data-icon="star" data-size="34"></i></button>
+        </div>
+        <textarea id="rvText" rows="2" placeholder="感想をひとこと（任意）"></textarea>
+        <button class="btn brand" id="rvSubmit" disabled>レビューを送る</button>
+        <div class="rv-thanks hidden" id="rvThanks"><i data-icon="check" data-size="18"></i> ご評価ありがとうございました！</div>
+      </div>
     </section>
   </div>
 
