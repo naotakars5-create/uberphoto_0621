@@ -50,6 +50,81 @@ import math
 # Asakusa as the trial area centre.
 ASAKUSA = (35.7148, 139.7967)
 
+# Shooting areas the customer can choose from: a prefecture/region with its
+# iconic tourist spots. Each spot carries an approximate lat/lng (drives the
+# mini-map layout + distance estimate) and a "best light" hint.
+AREAS = [
+    {
+        "id": "tokyo", "name": "東京", "emoji": "🗼",
+        "spots": [
+            {"name": "雷門（浅草）", "hint": "午前は順光で顔が明るく写ります", "lat": 35.7108, "lng": 139.7967},
+            {"name": "仲見世通り", "hint": "夕方は提灯に灯りが入って雰囲気◎", "lat": 35.7118, "lng": 139.7960},
+            {"name": "浅草寺 本堂", "hint": "朝いちばんは人が少なく撮りやすい", "lat": 35.7148, "lng": 139.7967},
+            {"name": "東京スカイツリー前", "hint": "日没前後のマジックアワーが絶景", "lat": 35.7101, "lng": 139.8107},
+            {"name": "渋谷スクランブル交差点", "hint": "夜のネオンで都会的な一枚", "lat": 35.6595, "lng": 139.7005},
+            {"name": "東京タワー", "hint": "日没後のライトアップが映えます", "lat": 35.6586, "lng": 139.7454},
+            {"name": "明治神宮", "hint": "木漏れ日の参道がやわらかい光", "lat": 35.6764, "lng": 139.6993},
+            {"name": "上野公園", "hint": "桜・新緑シーズンは午前がおすすめ", "lat": 35.7156, "lng": 139.7745},
+            {"name": "お台場 海浜公園", "hint": "夕暮れのレインボーブリッジと", "lat": 35.6306, "lng": 139.7758},
+            {"name": "東京駅 丸の内", "hint": "夜のライトアップで荘厳に", "lat": 35.6812, "lng": 139.7671},
+        ],
+    },
+    {
+        "id": "kyoto", "name": "京都", "emoji": "⛩️",
+        "spots": [
+            {"name": "清水寺", "hint": "朝いちは人が少なく舞台を独り占め", "lat": 34.9949, "lng": 135.7850},
+            {"name": "伏見稲荷大社 千本鳥居", "hint": "早朝は鳥居が空くので狙い目", "lat": 34.9671, "lng": 135.7727},
+            {"name": "嵐山 竹林の小径", "hint": "午前の斜光が竹に差し込んで幻想的", "lat": 35.0094, "lng": 135.6722},
+            {"name": "金閣寺", "hint": "晴れた午前、池の反射と一緒に", "lat": 35.0394, "lng": 135.7292},
+            {"name": "祇園 花見小路", "hint": "夕暮れの石畳が風情たっぷり", "lat": 35.0036, "lng": 135.7752},
+            {"name": "八坂の塔", "hint": "夕方〜ブルーアワーがいちばん映える", "lat": 34.9985, "lng": 135.7820},
+        ],
+    },
+    {
+        "id": "osaka", "name": "大阪", "emoji": "🐙",
+        "spots": [
+            {"name": "大阪城", "hint": "晴れた午前、天守と青空を背景に", "lat": 34.6873, "lng": 135.5259},
+            {"name": "道頓堀 グリコサイン", "hint": "夜のネオンで大阪らしい一枚", "lat": 34.6687, "lng": 135.5013},
+            {"name": "通天閣", "hint": "夕暮れ〜夜のライトアップが◎", "lat": 34.6525, "lng": 135.5063},
+            {"name": "海遊館", "hint": "夕方の海辺の光がやわらかい", "lat": 34.6545, "lng": 135.4289},
+        ],
+    },
+    {
+        "id": "kanagawa", "name": "神奈川", "emoji": "🌊",
+        "spots": [
+            {"name": "鎌倉 高徳院（大仏）", "hint": "午前のやわらかい光がおすすめ", "lat": 35.3169, "lng": 139.5358},
+            {"name": "江ノ島", "hint": "夕暮れのサンセットが絶景", "lat": 35.2996, "lng": 139.4807},
+            {"name": "横浜赤レンガ倉庫", "hint": "夜のライトアップでロマンチックに", "lat": 35.4530, "lng": 139.6428},
+            {"name": "みなとみらい", "hint": "ブルーアワーの夜景がいちばん映える", "lat": 35.4570, "lng": 139.6380},
+        ],
+    },
+    {
+        "id": "nara", "name": "奈良", "emoji": "🦌",
+        "spots": [
+            {"name": "東大寺 大仏殿", "hint": "午前は順光で建物がくっきり", "lat": 34.6890, "lng": 135.8398},
+            {"name": "奈良公園（鹿）", "hint": "朝夕は鹿がのんびりで撮りやすい", "lat": 34.6851, "lng": 135.8430},
+            {"name": "春日大社", "hint": "木漏れ日と灯籠がやわらかい光", "lat": 34.6818, "lng": 135.8483},
+        ],
+    },
+    {
+        "id": "hokkaido", "name": "北海道", "emoji": "❄️",
+        "spots": [
+            {"name": "小樽運河", "hint": "夕暮れ〜夜のガス灯が幻想的", "lat": 43.1986, "lng": 140.9947},
+            {"name": "函館山 夜景", "hint": "日没後のブルーアワーが絶景", "lat": 41.7596, "lng": 140.7045},
+            {"name": "札幌 大通公園", "hint": "晴れた日中、テレビ塔を背景に", "lat": 43.0556, "lng": 141.3460},
+        ],
+    },
+    {
+        "id": "okinawa", "name": "沖縄", "emoji": "🌺",
+        "spots": [
+            {"name": "美ら海水族館", "hint": "午後の海辺の光がきれい", "lat": 26.6943, "lng": 127.8779},
+            {"name": "首里城", "hint": "午前は順光で朱色が鮮やか", "lat": 26.2170, "lng": 127.7196},
+            {"name": "国際通り", "hint": "夕暮れのにぎわいを背景に", "lat": 26.2146, "lng": 127.6792},
+        ],
+    },
+]
+AREA_BY_ID = {a["id"]: a for a in AREAS}
+
 # Demo photographers so a customer always sees 2-3 nearby choices.
 # Names + thumbs mirror the featured cards on the landing page.
 DEMO_PHOTOGRAPHERS = [
@@ -165,8 +240,10 @@ def photographer_view(row, origin=None):
     # portfolio: the photographer's own uploads if any, else 6 rotated samples
     own = parse_portfolio(row)
     portfolio = own if own else [WORK_THUMBS[(pid + i) % len(WORK_THUMBS)] for i in range(6)]
-    # distance: real haversine if we know both ends, else a stable fallback
-    if origin and row["lat"] is not None and row["lng"] is not None:
+    # distance: real haversine for real photographers if we know both ends;
+    # demo photographers always appear "nearby" so the demo flow works in any
+    # chosen area (their fixed seed location is in Asakusa only).
+    if origin and not row["is_demo"] and row["lat"] is not None and row["lng"] is not None:
         dist = round(haversine_km(origin, (row["lat"], row["lng"])), 1)
     else:
         dist = round(0.2 + (pid * 3 % 9) / 10, 1)
@@ -255,6 +332,12 @@ def get_plans():
     return PLANS
 
 
+# ---------------- API: shooting areas ----------------
+@app.get("/api/areas")
+def get_areas():
+    return AREAS
+
+
 # ---------------- API: photographer ----------------
 class PhotographerIn(BaseModel):
     name: str
@@ -327,6 +410,7 @@ def get_photographer(pid: int):
         "name": row["name"],
         "phone": row["phone"],
         "bio": row["bio"] or "",
+        "area": row["area"] or "",
         "specialty": row["specialty"] or "",
         "tags": [t for t in (row["specialty"] or "").split(",") if t],
         "thumb": row["thumb"],
@@ -341,6 +425,7 @@ def get_photographer(pid: int):
 class ProfileIn(BaseModel):
     name: Optional[str] = None
     bio: Optional[str] = None
+    area: Optional[str] = None              # service area (prefecture/region name)
     specialty: Optional[str] = None        # comma-joined tags
     portfolio: Optional[list[str]] = None  # full list (enables remove/reorder)
 
@@ -352,6 +437,8 @@ def update_profile(pid: int, p: ProfileIn):
         sets.append("name=?"); vals.append(p.name.strip())
     if p.bio is not None:
         sets.append("bio=?"); vals.append(p.bio.strip())
+    if p.area is not None:
+        sets.append("area=?"); vals.append(p.area.strip())
     if p.specialty is not None:
         sets.append("specialty=?"); vals.append(p.specialty.strip())
     if p.portfolio is not None:

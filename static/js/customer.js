@@ -15,39 +15,36 @@ const $ = (id) => document.getElementById(id);
 
 let etaTimer = null;
 
-// Popular spots in the Asakusa trial area: best-light hint + position on the map (viewBox 0..400 / 0..230).
-const SPOTS = [
-  { name: '雷門', hint: '午前は順光で顔が明るく写ります', x: 195, y: 204 },
-  { name: '仲見世通り', hint: '夕方は提灯に灯りが入って雰囲気◎', x: 195, y: 150 },
-  { name: '浅草寺 本堂', hint: '朝いちばんは人が少なく撮りやすい', x: 212, y: 84 },
-  { name: '五重塔', hint: '晴れた日中、青空と一緒に', x: 150, y: 92 },
-  { name: '隅田川テラス', hint: '夕暮れ〜夜景がいちばん映えます', x: 294, y: 182 },
-  { name: 'スカイツリー前', hint: '日没前後のマジックアワーが絶景', x: 368, y: 116 },
-];
+// Shooting areas (都道府県→spots) loaded from the backend. Each spot has a
+// lat/lng that drives the mini-map pin layout and the shoot location.
+let areas = [];
+let currentArea = null;   // the selected area object
+let spots = [];           // currentArea.spots with computed map x/y
+let spotLatLng = null;    // { lat, lng } of the chosen spot
+
+// Place an area's spots on the 400×230 map by normalising their lat/lng into
+// the viewBox (higher latitude = further up). A single/degenerate spread
+// falls back to the centre.
+function layoutSpots(list) {
+  const W = 400, H = 230, pad = 40;
+  const lats = list.map((s) => s.lat), lngs = list.map((s) => s.lng);
+  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+  const spanLat = maxLat - minLat, spanLng = maxLng - minLng;
+  return list.map((s) => {
+    const fx = spanLng > 1e-4 ? (s.lng - minLng) / spanLng : 0.5;
+    const fy = spanLat > 1e-4 ? (maxLat - s.lat) / spanLat : 0.5;
+    return { ...s, x: pad + fx * (W - 2 * pad), y: pad + fy * (H - 2 * pad) };
+  });
+}
+
 const PEOPLE_OPTS = ['1人', '2人', '3〜4人', '5人以上'];
 const SCENE_OPTS = ['記念', 'カップル', '家族', '友達', 'ソロ活', 'プロフィール'];
 
 function initDetails() {
-  // spot picker: dropdown + tappable map pins, kept in sync
-  const sel = $('spotSelect');
-  SPOTS.forEach((s) => {
-    const o = document.createElement('option');
-    o.value = s.name;
-    o.textContent = s.name;
-    sel.appendChild(o);
-  });
-  sel.addEventListener('change', () => { if (sel.value) selectSpot(sel.value); });
-
-  const pins = $('spotPins');
-  pins.innerHTML = SPOTS.map((s) => `
-    <g class="spot-pin" data-name="${escapeHtml(s.name)}" transform="translate(${s.x},${s.y})">
-      <circle class="sp-hit" r="18" fill="transparent"/>
-      <circle class="sp-ring" r="12"/>
-      <circle class="sp-dot" r="7"/>
-    </g>`).join('');
-  pins.querySelectorAll('.spot-pin').forEach((g) => {
-    g.addEventListener('click', () => selectSpot(g.dataset.name));
-  });
+  // area picker drives the spot picker
+  $('areaSelect').addEventListener('change', (e) => selectArea(e.target.value));
+  $('spotSelect').addEventListener('change', (e) => { if (e.target.value) selectSpot(e.target.value); });
 
   // people (single-select)
   const pc = $('peopleChips');
@@ -87,10 +84,63 @@ function initDetails() {
   hydrateIcons($('step-plan'));
 }
 
+// Load selectable areas (都道府県) and populate the area dropdown.
+async function loadAreas() {
+  try {
+    areas = await api('/api/areas');
+  } catch (e) { areas = []; }
+  const sel = $('areaSelect');
+  sel.innerHTML = '';
+  if (!areas.length) { sel.innerHTML = '<option>読み込みエラー</option>'; return; }
+  areas.forEach((a, i) => {
+    const o = document.createElement('option');
+    o.value = a.id;
+    o.textContent = `${a.emoji || ''} ${a.name}`.trim();
+    if (i === 0) o.selected = true;
+    sel.appendChild(o);
+  });
+  selectArea(areas[0].id);
+}
+
+// Switch the active area: rebuild the spot dropdown + map pins, reset selection.
+function selectArea(areaId) {
+  currentArea = areas.find((a) => a.id === areaId) || areas[0];
+  if (!currentArea) return;
+  $('areaSelect').value = currentArea.id;
+  spots = layoutSpots(currentArea.spots);
+  selectedSpot = '';
+  spotLatLng = null;
+
+  const sel = $('spotSelect');
+  sel.innerHTML = `<option value="" disabled selected>${currentArea.name}のスポットを選ぶ…</option>`;
+  spots.forEach((s) => {
+    const o = document.createElement('option');
+    o.value = s.name;
+    o.textContent = s.name;
+    sel.appendChild(o);
+  });
+
+  const pins = $('spotPins');
+  pins.innerHTML = spots.map((s) => `
+    <g class="spot-pin" data-name="${escapeHtml(s.name)}" transform="translate(${s.x.toFixed(1)},${s.y.toFixed(1)})">
+      <circle class="sp-hit" r="18" fill="transparent"/>
+      <circle class="sp-ring" r="12"/>
+      <circle class="sp-dot" r="7"/>
+    </g>`).join('');
+  pins.querySelectorAll('.spot-pin').forEach((g) => {
+    g.addEventListener('click', () => selectSpot(g.dataset.name));
+  });
+
+  $('mapCap').innerHTML = `${icon('map', 13)}<span>${escapeHtml(currentArea.name)}・ピンをタップして選択</span>`;
+  $('spotHint').querySelector('span').textContent = 'スポットを選ぶと、きれいに撮れる時間帯のヒントが出ます';
+  validate();
+}
+
 // Choose a shooting spot from either the map or the dropdown; keep both in sync.
 function selectSpot(name) {
   selectedSpot = name;
-  const s = SPOTS.find((x) => x.name === name);
+  const s = spots.find((x) => x.name === name);
+  spotLatLng = s ? { lat: s.lat, lng: s.lng } : null;
   $('spotSelect').value = name;
   document.querySelectorAll('#spotPins .spot-pin').forEach((g) => {
     g.classList.toggle('on', g.dataset.name === name);
@@ -98,6 +148,13 @@ function selectSpot(name) {
   $('mapCap').innerHTML = `${icon('pin', 13)}<span>${escapeHtml(name)}</span>`;
   if (s) $('spotHint').querySelector('span').textContent = s.hint;
   validate();
+}
+
+// Human-readable shoot location, e.g. "京都・清水寺" or "東京エリア".
+function locationLabel() {
+  const area = currentArea ? currentArea.name : '';
+  if (selectedSpot) return area ? `${area}・${selectedSpot}` : selectedSpot;
+  return area ? `${area}エリア` : 'エリア未選択';
 }
 
 function show(step) {
@@ -179,7 +236,7 @@ function showConfirm() {
   $('cf-plan').textContent = p.label.split(' ')[0];
   $('cf-shots').textContent = p.shots + '枚';
   $('cf-min').textContent = p.minutes + '分';
-  $('cf-loc').textContent = selectedSpot || '浅草エリア';
+  $('cf-loc').textContent = locationLabel();
   // optional details: hide the row when empty
   const note = $('note').value.trim();
   $('cf-people-row').style.display = selectedPeople ? '' : 'none';
@@ -201,11 +258,12 @@ $('confirmPay').addEventListener('click', async () => {
   $('confirmPay').disabled = true;
   $('confirmPay').innerHTML = '決済処理中…';
   try {
-    customerPos = await getPosition(); // captured before any Stripe redirect
+    // shoot happens at the chosen spot; use its coordinates, falling back to GPS
+    customerPos = spotLatLng || (await getPosition()); // captured before any Stripe redirect
     const order = await api('/api/orders', 'POST', {
       plan: selectedPlan,
       customer_name: $('name').value.trim(),
-      location: selectedSpot || '浅草エリア',
+      location: locationLabel(),
       lat: customerPos ? customerPos.lat : null,
       lng: customerPos ? customerPos.lng : null,
       people: selectedPeople || null,
@@ -614,5 +672,6 @@ $('rvSubmit').addEventListener('click', async () => {
 });
 
 initDetails();
+loadAreas();
 loadPlans();
 handlePaymentReturn();

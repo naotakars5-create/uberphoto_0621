@@ -37,6 +37,7 @@ function enterStandby() {
   show('step-standby');
   $('hello').textContent = `こんにちは、${me.name}さん`;
   requestNotifyPermission();
+  loadAreaOptions();
   loadMyProfile();
 }
 
@@ -44,7 +45,22 @@ function enterStandby() {
 let myProfile = null;
 let editTags = [];
 let editPortfolio = [];
+let areaOpts = [];      // [{id, name, emoji}] from /api/areas
 const TAG_OPTS = ['ポートレート', '自然光', 'スナップ', '家族', 'カップル', '映え', '風景', '旅', '夜景', 'イルミ', 'プロフィール'];
+
+// Populate the service-area dropdown from the shared area list (once).
+async function loadAreaOptions() {
+  if (areaOpts.length) return;
+  try { areaOpts = await api('/api/areas'); } catch (e) { return; }
+  const sel = $('epArea');
+  sel.innerHTML = '<option value="">未設定</option>';
+  areaOpts.forEach((a) => {
+    const o = document.createElement('option');
+    o.value = a.name;
+    o.textContent = `${a.emoji || ''} ${a.name}`.trim();
+    sel.appendChild(o);
+  });
+}
 
 async function loadMyProfile() {
   try {
@@ -57,6 +73,9 @@ async function loadMyProfile() {
   $('hello').textContent = `こんにちは、${myProfile.name || me.name}さん`;
   $('pcBio').textContent = myProfile.bio || '自己紹介がまだありません。「プロフィールを編集」から追加しましょう。';
   if (myProfile.thumb) { $('pcAvatar').src = myProfile.thumb; $('aeAvatar').src = myProfile.thumb; }
+  const pcArea = $('pcArea');
+  if (myProfile.area) { pcArea.innerHTML = `${icon('pin', 13)} ${myProfile.area}`; pcArea.style.display = ''; }
+  else { pcArea.style.display = 'none'; }
   $('pcTags').innerHTML = (myProfile.tags || []).map((t) => `<span class="tag">${t}</span>`).join('');
   // received reviews
   const rv = $('pReviews');
@@ -80,12 +99,14 @@ function reviewHtml(r) {
     </div>`;
 }
 
-function enterProfile() {
+async function enterProfile() {
   show('step-profile');
   editTags = [...(myProfile.tags || [])];
   editPortfolio = [...(myProfile.portfolio || [])];
   $('epName').value = myProfile.name || '';
   $('epBio').value = myProfile.bio || '';
+  await loadAreaOptions();
+  $('epArea').value = myProfile.area || '';
   if (myProfile.thumb) $('aeAvatar').src = myProfile.thumb;
   renderTagChips();
   renderPortfolio();
@@ -166,6 +187,7 @@ $('saveProfileBtn').addEventListener('click', async () => {
     await api(`/api/photographers/${me.id}/profile`, 'POST', {
       name: $('epName').value.trim(),
       bio: $('epBio').value.trim(),
+      area: $('epArea').value,
       specialty: editTags.join(','),
       portfolio: editPortfolio,
     });

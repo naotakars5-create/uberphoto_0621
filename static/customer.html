@@ -36,23 +36,28 @@
       <label>お名前（ニックネーム可）</label>
       <input type="text" id="name" placeholder="例：たろう" />
 
+      <label>エリア（都道府県）</label>
+      <div class="select-wrap">
+        <select id="areaSelect" aria-label="エリアを選ぶ"></select>
+        <i data-icon="chevron" data-size="18" class="select-chev"></i>
+      </div>
+
       <label>撮影スポット</label>
       <div class="pick-map">
-        <svg viewBox="0 0 400 230" preserveAspectRatio="xMidYMid slice" class="pmap-svg" role="img" aria-label="浅草エリアの地図">
+        <svg viewBox="0 0 400 230" preserveAspectRatio="xMidYMid slice" class="pmap-svg" role="img" aria-label="エリアの地図">
           <rect width="400" height="230" fill="#eef1ea"/>
-          <!-- east bank (across the river) -->
-          <rect x="338" y="0" width="62" height="230" fill="#e7efe0"/>
-          <!-- Sumida river -->
-          <path d="M296,-8 L344,-8 L324,238 L276,238 Z" fill="#cfe6ef"/>
-          <!-- Sensoji precinct greenery -->
-          <rect x="116" y="54" width="156" height="124" rx="15" fill="#dcebd3"/>
-          <!-- Nakamise approach -->
-          <rect x="182" y="92" width="26" height="122" rx="9" fill="#f3e2d2"/>
-          <!-- roads -->
-          <g fill="none" stroke="#e4e7df" stroke-width="9" stroke-linecap="round">
-            <path d="M0,110 H276"/><path d="M64,0 V230"/><path d="M252,0 V54"/>
+          <!-- generic neutral cityscape backdrop -->
+          <rect x="320" y="0" width="80" height="230" fill="#e7efe0"/>
+          <path d="M288,-8 L330,-8 L312,238 L270,238 Z" fill="#cfe6ef"/>
+          <rect x="120" y="46" width="150" height="120" rx="16" fill="#dcebd3"/>
+          <g fill="#e4e7df">
+            <rect x="22" y="22" width="74" height="52" rx="7"/>
+            <rect x="24" y="150" width="66" height="58" rx="7"/>
           </g>
-          <!-- spot pins (rendered by JS) -->
+          <g fill="none" stroke="#e4e7df" stroke-width="9" stroke-linecap="round">
+            <path d="M0,112 H270"/><path d="M64,0 V230"/><path d="M250,0 V46"/>
+          </g>
+          <!-- spot pins (rendered by JS, positioned from each spot's lat/lng) -->
           <g id="spotPins"></g>
         </svg>
         <div class="pmap-cap" id="mapCap"><i data-icon="map" data-size="13"></i><span>ピンをタップ、または下から選択</span></div>

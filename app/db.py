@@ -125,3 +125,4 @@ def init_db():
         # photographer self-service profile (bio + own portfolio)
         _ensure_column(conn, "photographers", "bio", "bio TEXT")
         _ensure_column(conn, "photographers", "portfolio", "portfolio TEXT")
+        _ensure_column(conn, "photographers", "area", "area TEXT")

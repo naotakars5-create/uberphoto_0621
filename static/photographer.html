@@ -75,6 +75,7 @@
           <div style="flex:1;min-width:0">
             <div class="pc-name" id="pcName">—</div>
             <div class="rating-inline" id="pcStat"><i data-icon="star" data-size="14"></i>—</div>
+            <div class="pc-area muted" id="pcArea" style="display:none"></div>
             <div class="pc-tags pick-tags" id="pcTags"></div>
           </div>
         </div>
@@ -108,6 +109,12 @@
 
       <label>自己紹介</label>
       <textarea id="epBio" rows="3" placeholder="例：自然光のポートレートが得意。肩の力が抜けた、その人らしい一枚を。"></textarea>
+
+      <label>活動エリア</label>
+      <div class="select-wrap">
+        <select id="epArea" aria-label="活動エリアを選ぶ"></select>
+        <i data-icon="chevron" data-size="18" class="select-chev"></i>
+      </div>
 
       <label>得意なジャンル（複数選択OK）</label>
       <div class="opt-chips" id="epTags"></div>
