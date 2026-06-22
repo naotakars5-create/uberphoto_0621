@@ -76,6 +76,31 @@ function getPosition(timeout = 8000) {
   });
 }
 
+// Escape user-generated text before inserting via innerHTML.
+function escapeHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// Format a timestamp (server "YYYY-MM-DD HH:MM:SS" in UTC, or ISO) to local HH:MM.
+function fmtTime(ts) {
+  if (!ts) return '';
+  const s = String(ts);
+  const d = (s.includes('T') || s.endsWith('Z')) ? new Date(s) : new Date(s.replace(' ', 'T') + 'Z');
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+}
+
+// One chat bubble. `mine` = sent by the viewer (right-aligned, brand colour).
+function chatBubble(text, mine, ts) {
+  const t = fmtTime(ts);
+  return `<div class="chat-msg ${mine ? 'me' : 'them'}">` +
+    `<div class="bubble">${escapeHtml(text)}</div>` +
+    (t ? `<span class="chat-time">${t}</span>` : '') +
+    `</div>`;
+}
+
 function requestNotifyPermission() {
   if ('Notification' in window && Notification.permission === 'default') {
     Notification.requestPermission();

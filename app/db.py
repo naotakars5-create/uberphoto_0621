@@ -106,6 +106,15 @@ def init_db():
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
                 FOREIGN KEY (photographer_id) REFERENCES photographers(id)
             );
+
+            CREATE TABLE IF NOT EXISTS messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                request_id INTEGER NOT NULL,
+                sender TEXT NOT NULL,        -- 'customer' | 'photographer'
+                text TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY (request_id) REFERENCES requests(id)
+            );
             """
         )
         # lightweight migrations for older DB files (extra request details)

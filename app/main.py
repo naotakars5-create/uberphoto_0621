@@ -646,6 +646,66 @@ def submit_review(rid: int, r: ReviewIn):
     return {"ok": True}
 
 
+# ---------------- API: chat (customer ⇄ photographer) ----------------
+DEMO_REPLY = "まもなく到着します！目印になる服装や立っている場所を教えていただけると、すぐ見つけられます😊"
+
+
+async def _demo_auto_reply(rid: int):
+    """A demo photographer can't type, so send one friendly reply the first time
+    the customer messages — keeps the solo demo flow feeling alive."""
+    await asyncio.sleep(2.2)
+    with db() as conn:
+        already = conn.execute(
+            "SELECT COUNT(*) c FROM messages WHERE request_id=? AND sender='photographer'", (rid,)
+        ).fetchone()["c"]
+        if already:
+            return
+        conn.execute(
+            "INSERT INTO messages (request_id, sender, text) VALUES (?, 'photographer', ?)", (rid, DEMO_REPLY)
+        )
+    await manager.send_to_customer(rid, {"type": "message", "sender": "photographer", "text": DEMO_REPLY})
+
+
+class MessageIn(BaseModel):
+    sender: str   # 'customer' | 'photographer'
+    text: str
+
+
+@app.get("/api/requests/{rid}/messages")
+def list_messages(rid: int):
+    with db() as conn:
+        rows = conn.execute(
+            "SELECT sender, text, created_at FROM messages WHERE request_id=? ORDER BY id", (rid,)
+        ).fetchall()
+    return [{"sender": r["sender"], "text": r["text"], "created_at": r["created_at"]} for r in rows]
+
+
+@app.post("/api/requests/{rid}/messages")
+async def post_message(rid: int, m: MessageIn):
+    text = (m.text or "").strip()[:1000]
+    if not text:
+        raise HTTPException(400, "empty message")
+    sender = "photographer" if m.sender == "photographer" else "customer"
+    with db() as conn:
+        req = conn.execute("SELECT photographer_id FROM requests WHERE id=?", (rid,)).fetchone()
+        if not req:
+            raise HTTPException(404, "request not found")
+        pid = req["photographer_id"]
+        conn.execute("INSERT INTO messages (request_id, sender, text) VALUES (?, ?, ?)", (rid, sender, text))
+        is_demo = False
+        if pid:
+            d = conn.execute("SELECT is_demo FROM photographers WHERE id=?", (pid,)).fetchone()
+            is_demo = bool(d and d["is_demo"])
+    if sender == "customer":
+        if pid:
+            await manager.send_to_photographer(pid, {"type": "message", "sender": sender, "text": text, "request_id": rid})
+        if is_demo:
+            asyncio.create_task(_demo_auto_reply(rid))
+    else:
+        await manager.send_to_customer(rid, {"type": "message", "sender": sender, "text": text})
+    return {"ok": True}
+
+
 # ---------------- API: photo upload ----------------
 @app.post("/api/sessions/{token}/photos")
 async def upload_photos(token: str, files: list[UploadFile] = File(...)):

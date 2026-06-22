@@ -37,8 +37,32 @@
       <input type="text" id="name" placeholder="例：たろう" />
 
       <label>撮影スポット</label>
-      <div class="spot-chips" id="spotChips"></div>
-      <input type="text" id="location" placeholder="例：浅草寺 雷門前" />
+      <div class="pick-map">
+        <svg viewBox="0 0 400 230" preserveAspectRatio="xMidYMid slice" class="pmap-svg" role="img" aria-label="浅草エリアの地図">
+          <rect width="400" height="230" fill="#eef1ea"/>
+          <!-- east bank (across the river) -->
+          <rect x="338" y="0" width="62" height="230" fill="#e7efe0"/>
+          <!-- Sumida river -->
+          <path d="M296,-8 L344,-8 L324,238 L276,238 Z" fill="#cfe6ef"/>
+          <!-- Sensoji precinct greenery -->
+          <rect x="116" y="54" width="156" height="124" rx="15" fill="#dcebd3"/>
+          <!-- Nakamise approach -->
+          <rect x="182" y="92" width="26" height="122" rx="9" fill="#f3e2d2"/>
+          <!-- roads -->
+          <g fill="none" stroke="#e4e7df" stroke-width="9" stroke-linecap="round">
+            <path d="M0,110 H276"/><path d="M64,0 V230"/><path d="M252,0 V54"/>
+          </g>
+          <!-- spot pins (rendered by JS) -->
+          <g id="spotPins"></g>
+        </svg>
+        <div class="pmap-cap" id="mapCap"><i data-icon="map" data-size="13"></i><span>ピンをタップ、または下から選択</span></div>
+      </div>
+      <div class="select-wrap">
+        <select id="spotSelect" aria-label="撮影スポットを選ぶ">
+          <option value="" disabled selected>スポットを選ぶ…</option>
+        </select>
+        <i data-icon="chevron" data-size="18" class="select-chev"></i>
+      </div>
       <p class="spot-hint" id="spotHint"><i data-icon="sparkles" data-size="14"></i><span>スポットを選ぶと、きれいに撮れる時間帯のヒントが出ます</span></p>
 
       <!-- shoot details -->
@@ -253,6 +277,31 @@
         <div class="rv-thanks hidden" id="rvThanks"><i data-icon="check" data-size="18"></i> ご評価ありがとうございました！</div>
       </div>
     </section>
+
+    <!-- chat with the photographer (after match) -->
+    <button id="chatFab" class="chat-fab hidden" aria-label="カメラマンにメッセージ">
+      <i data-icon="message" data-size="24"></i>
+      <span class="chat-fab-badge hidden" id="chatBadge">0</span>
+    </button>
+    <div id="chatSheet" class="sheet hidden">
+      <div class="sheet-backdrop" id="chatBackdrop"></div>
+      <div class="sheet-body chat-body">
+        <div class="sheet-handle"></div>
+        <div class="chat-head">
+          <img class="chat-avatar" id="chatAvatar" src="/static/img/work1.jpg" alt="">
+          <div style="flex:1;min-width:0">
+            <div class="chat-name" id="chatName">カメラマン</div>
+            <div class="chat-sub muted">合流前のやりとりにどうぞ</div>
+          </div>
+          <button class="chat-close" id="chatClose" aria-label="閉じる">×</button>
+        </div>
+        <div class="chat-log" id="chatLog"></div>
+        <form class="chat-input" id="chatForm">
+          <input type="text" id="chatText" placeholder="メッセージを入力…" autocomplete="off" maxlength="500">
+          <button type="submit" class="chat-send" aria-label="送信"><i data-icon="send" data-size="20"></i></button>
+        </form>
+      </div>
+    </div>
   </div>
 
   <script src="/static/js/icons.js"></script>

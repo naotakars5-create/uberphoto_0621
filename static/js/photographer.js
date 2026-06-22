@@ -207,6 +207,7 @@ function connect() {
     if (msg.type === 'assigned') {
       // a customer chose you — go straight into the shoot
       session = {
+        request_id: msg.request_id,
         gallery_token: msg.gallery_token,
         customer: msg.customer,
         plan: msg.plan,
@@ -219,6 +220,11 @@ function connect() {
       activeRequests = {};
       enterSession();
       notify('撮影リクエスト', `${msg.customer}さんに選ばれました！`);
+    } else if (msg.type === 'message') {
+      if (session && msg.request_id === session.request_id) {
+        addPMsg(msg.sender, msg.text, msg.created_at);
+        if (msg.sender === 'customer') notify(`${session.customer}さん`, msg.text);
+      }
     } else if (msg.type === 'cancelled') {
       // customer cancelled or switched photographer
       if (session) {
@@ -266,7 +272,51 @@ function enterSession() {
   hydrateIcons($('sessBrief'));
   uploadedTotal = 0;
   $('uploadCount').textContent = '';
+  // chat
+  pChat = [];
+  renderPChat();
+  loadPChat();
 }
+
+// ---------- chat with the customer ----------
+let pChat = [];
+
+function renderPChat() {
+  const log = $('pChatLog');
+  log.innerHTML = pChat.length
+    ? pChat.map((m) => chatBubble(m.text, m.sender === 'photographer', m.ts)).join('')
+    : '<p class="chat-empty muted">お客様にメッセージを送れます。<br>「○分で着きます」など合流の連絡に。</p>';
+}
+
+function scrollPChat() { const l = $('pChatLog'); l.scrollTop = l.scrollHeight; }
+
+function addPMsg(sender, text, ts) {
+  pChat.push({ sender, text, ts: ts || new Date().toISOString() });
+  renderPChat();
+  scrollPChat();
+}
+
+async function loadPChat() {
+  if (!session) return;
+  try {
+    const msgs = await api(`/api/requests/${session.request_id}/messages`);
+    pChat = msgs.map((m) => ({ sender: m.sender, text: m.text, ts: m.created_at }));
+  } catch (e) { /* keep what we have */ }
+  renderPChat();
+  scrollPChat();
+}
+
+$('pChatForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!session) return;
+  const v = $('pChatText').value.trim();
+  if (!v) return;
+  $('pChatText').value = '';
+  addPMsg('photographer', v, new Date().toISOString());
+  try {
+    await api(`/api/requests/${session.request_id}/messages`, 'POST', { sender: 'photographer', text: v });
+  } catch (err) { toast('送信できませんでした'); }
+});
 
 $('uploadBtn').addEventListener('click', async () => {
   const files = $('fileInput').files;

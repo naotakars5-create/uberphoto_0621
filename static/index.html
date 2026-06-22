@@ -13,6 +13,7 @@
 </head>
 <body>
   <div class="app">
+    <div class="aura" aria-hidden="true"></div>
     <div class="topbar">
       <div class="logo"><span class="u">Uber</span>PHOTO</div>
       <div class="badge">β MVP</div>
@@ -21,11 +22,20 @@
     <!-- HERO -->
     <div class="hero reveal">
       <img src="/static/img/hero.jpg" alt="">
+      <div class="hero-badge">
+        <i data-icon="star" data-size="15" class="hb-star"></i>
+        <div><b>4.9</b><small>満足度</small></div>
+      </div>
       <div class="hero-inner">
         <p class="eyebrow">Tourist × Photographer</p>
         <h1>旅の一瞬を、<br>作品に変える。</h1>
         <p>近くのプロと、その場でマッチング。30分で、自然な一枚を。</p>
       </div>
+    </div>
+
+    <!-- live availability -->
+    <div class="live-pill reveal" id="livePill">
+      <span class="dot"></span><span id="liveText">いま浅草エリアの待機状況を確認中…</span>
     </div>
 
     <!-- stats -->
@@ -140,6 +150,19 @@
   <script src="/static/js/common.js"></script>
   <script>
   (function () {
+    // ---- live availability (real online count) ----
+    fetch('/api/stats').then((r) => r.json()).then((s) => {
+      const el = document.getElementById('liveText');
+      if (!el) return;
+      if (typeof s.online === 'number' && s.online > 0) {
+        el.innerHTML = `いま浅草エリアで <b>${s.online}人</b> のプロが待機中`;
+      } else {
+        el.textContent = '次の試験運用は土日 14:00–18:00';
+        const d = document.querySelector('#livePill .dot');
+        if (d) d.style.background = 'var(--gold)';
+      }
+    }).catch(() => {});
+
     // ---- onboarding (shown once) ----
     const onb = document.getElementById('onb');
     if (!localStorage.getItem('uphoto_onboarded')) {

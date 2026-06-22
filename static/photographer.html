@@ -152,6 +152,17 @@
         <button class="btn accent" id="uploadBtn"><i data-icon="zap" data-size="18"></i> 写真をアップロード</button>
         <p class="center muted" id="uploadCount" style="margin-top:12px;margin-bottom:0"></p>
       </div>
+
+      <!-- chat with the customer -->
+      <div class="card chat-card">
+        <div class="section-head" style="margin-bottom:10px"><h2>お客様とやりとり</h2></div>
+        <div class="chat-log" id="pChatLog"></div>
+        <form class="chat-input" id="pChatForm">
+          <input type="text" id="pChatText" placeholder="例：3分で着きます！" autocomplete="off" maxlength="500">
+          <button type="submit" class="chat-send" aria-label="送信"><i data-icon="send" data-size="20"></i></button>
+        </form>
+      </div>
+
       <button class="btn green" id="completeBtn"><i data-icon="check" data-size="18"></i> 撮影を完了する</button>
     </section>
   </div>

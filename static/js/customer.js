@@ -7,40 +7,46 @@ let customerPos = null;
 let nearbyList = [];
 let selectedPeople = '';
 let selectedScenes = [];
+let selectedSpot = '';
 let matchedName = '';
+let matchedPhotographer = null;
 
 const $ = (id) => document.getElementById(id);
 
 let etaTimer = null;
 
-// Popular spots in the Asakusa trial area, with a best-light hint each.
+// Popular spots in the Asakusa trial area: best-light hint + position on the map (viewBox 0..400 / 0..230).
 const SPOTS = [
-  { name: '雷門', hint: '午前は順光で顔が明るく写ります' },
-  { name: '仲見世通り', hint: '夕方は提灯に灯りが入って雰囲気◎' },
-  { name: '浅草寺 本堂', hint: '朝いちばんは人が少なく撮りやすい' },
-  { name: '五重塔', hint: '晴れた日中、青空と一緒に' },
-  { name: '隅田川テラス', hint: '夕暮れ〜夜景がいちばん映えます' },
-  { name: 'スカイツリー前', hint: '日没前後のマジックアワーが絶景' },
+  { name: '雷門', hint: '午前は順光で顔が明るく写ります', x: 195, y: 204 },
+  { name: '仲見世通り', hint: '夕方は提灯に灯りが入って雰囲気◎', x: 195, y: 150 },
+  { name: '浅草寺 本堂', hint: '朝いちばんは人が少なく撮りやすい', x: 212, y: 84 },
+  { name: '五重塔', hint: '晴れた日中、青空と一緒に', x: 150, y: 92 },
+  { name: '隅田川テラス', hint: '夕暮れ〜夜景がいちばん映えます', x: 294, y: 182 },
+  { name: 'スカイツリー前', hint: '日没前後のマジックアワーが絶景', x: 368, y: 116 },
 ];
 const PEOPLE_OPTS = ['1人', '2人', '3〜4人', '5人以上'];
 const SCENE_OPTS = ['記念', 'カップル', '家族', '友達', 'ソロ活', 'プロフィール'];
 
 function initDetails() {
-  // spot quick-pick
-  const sc = $('spotChips');
+  // spot picker: dropdown + tappable map pins, kept in sync
+  const sel = $('spotSelect');
   SPOTS.forEach((s) => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'spot-chip';
-    b.textContent = s.name;
-    b.onclick = () => {
-      $('location').value = s.name;
-      document.querySelectorAll('.spot-chip').forEach((x) => x.classList.remove('on'));
-      b.classList.add('on');
-      $('spotHint').querySelector('span').textContent = s.hint;
-      validate();
-    };
-    sc.appendChild(b);
+    const o = document.createElement('option');
+    o.value = s.name;
+    o.textContent = s.name;
+    sel.appendChild(o);
+  });
+  sel.addEventListener('change', () => { if (sel.value) selectSpot(sel.value); });
+
+  const pins = $('spotPins');
+  pins.innerHTML = SPOTS.map((s) => `
+    <g class="spot-pin" data-name="${escapeHtml(s.name)}" transform="translate(${s.x},${s.y})">
+      <circle class="sp-hit" r="18" fill="transparent"/>
+      <circle class="sp-ring" r="12"/>
+      <circle class="sp-dot" r="7"/>
+    </g>`).join('');
+  pins.querySelectorAll('.spot-pin').forEach((g) => {
+    g.addEventListener('click', () => selectSpot(g.dataset.name));
   });
 
   // people (single-select)
@@ -79,6 +85,19 @@ function initDetails() {
   });
 
   hydrateIcons($('step-plan'));
+}
+
+// Choose a shooting spot from either the map or the dropdown; keep both in sync.
+function selectSpot(name) {
+  selectedSpot = name;
+  const s = SPOTS.find((x) => x.name === name);
+  $('spotSelect').value = name;
+  document.querySelectorAll('#spotPins .spot-pin').forEach((g) => {
+    g.classList.toggle('on', g.dataset.name === name);
+  });
+  $('mapCap').innerHTML = `${icon('pin', 13)}<span>${escapeHtml(name)}</span>`;
+  if (s) $('spotHint').querySelector('span').textContent = s.hint;
+  validate();
 }
 
 function show(step) {
@@ -160,7 +179,7 @@ function showConfirm() {
   $('cf-plan').textContent = p.label.split(' ')[0];
   $('cf-shots').textContent = p.shots + '枚';
   $('cf-min').textContent = p.minutes + '分';
-  $('cf-loc').textContent = $('location').value.trim() || '浅草エリア';
+  $('cf-loc').textContent = selectedSpot || '浅草エリア';
   // optional details: hide the row when empty
   const note = $('note').value.trim();
   $('cf-people-row').style.display = selectedPeople ? '' : 'none';
@@ -186,7 +205,7 @@ $('confirmPay').addEventListener('click', async () => {
     const order = await api('/api/orders', 'POST', {
       plan: selectedPlan,
       customer_name: $('name').value.trim(),
-      location: $('location').value.trim() || '浅草エリア',
+      location: selectedSpot || '浅草エリア',
       lat: customerPos ? customerPos.lat : null,
       lng: customerPos ? customerPos.lng : null,
       people: selectedPeople || null,
@@ -375,6 +394,9 @@ async function choosePhotographer(p) {
 function onMatched(p, token) {
   galleryToken = token;
   matchedName = p.name || '';
+  matchedPhotographer = p;
+  // chat becomes available the moment we match
+  setupChat(p);
   // arrival screen
   $('aName').textContent = p.name + ' さん';
   $('aAvatar').textContent = (p.name || '?').charAt(0);
@@ -432,9 +454,99 @@ function listenForPhotos() {
       $('shotStatus').textContent = '✅ 撮影完了';
       notify('UberPHOTO', '撮影が完了しました。写真を確認しましょう。');
       openReview();
+    } else if (msg.type === 'message') {
+      addChatMsg(msg.sender, msg.text, msg.created_at);
     }
   });
 }
+
+// ---------- chat with the photographer ----------
+let chatLog = [];
+let chatUnread = 0;
+
+function setupChat(p) {
+  chatLog = [];
+  chatUnread = 0;
+  $('chatAvatar').src = p.thumb || '/static/img/work1.jpg';
+  $('chatName').textContent = (p.name || 'カメラマン') + ' さん';
+  $('chatBadge').classList.add('hidden');
+  $('chatFab').classList.remove('hidden');
+  renderChat();
+  loadChatHistory();
+}
+
+function hideChat() {
+  $('chatFab').classList.add('hidden');
+  closeChat();
+}
+
+async function loadChatHistory() {
+  try {
+    const msgs = await api(`/api/requests/${requestId}/messages`);
+    chatLog = msgs.map((m) => ({ sender: m.sender, text: m.text, ts: m.created_at }));
+  } catch (e) { /* keep what we have */ }
+  if (chatIsOpen()) { renderChat(); scrollChat(); }
+}
+
+function chatIsOpen() {
+  const s = $('chatSheet');
+  return !s.classList.contains('hidden') && s.classList.contains('open');
+}
+
+function renderChat() {
+  $('chatLog').innerHTML = chatLog.length
+    ? chatLog.map((m) => chatBubble(m.text, m.sender === 'customer', m.ts)).join('')
+    : '<p class="chat-empty muted">メッセージはまだありません。<br>「赤い服で雷門前にいます」など、合流のやりとりにどうぞ。</p>';
+}
+
+function scrollChat() { const l = $('chatLog'); l.scrollTop = l.scrollHeight; }
+
+function addChatMsg(sender, text, ts) {
+  chatLog.push({ sender, text, ts: ts || new Date().toISOString() });
+  if (chatIsOpen()) {
+    renderChat();
+    scrollChat();
+  } else if (sender !== 'customer') {
+    chatUnread += 1;
+    const b = $('chatBadge');
+    b.textContent = chatUnread;
+    b.classList.remove('hidden');
+    const fab = $('chatFab');
+    fab.classList.remove('ping'); void fab.offsetWidth; fab.classList.add('ping');
+    notify(matchedName || 'カメラマン', text);
+  }
+}
+
+function openChat() {
+  chatUnread = 0;
+  $('chatBadge').classList.add('hidden');
+  renderChat();
+  const sheet = $('chatSheet');
+  sheet.classList.remove('hidden');
+  requestAnimationFrame(() => { sheet.classList.add('open'); scrollChat(); });
+  setTimeout(() => $('chatText').focus(), 280);
+  loadChatHistory();
+}
+
+function closeChat() {
+  const sheet = $('chatSheet');
+  sheet.classList.remove('open');
+  setTimeout(() => sheet.classList.add('hidden'), 250);
+}
+
+$('chatFab').addEventListener('click', openChat);
+$('chatClose').addEventListener('click', closeChat);
+$('chatBackdrop').addEventListener('click', closeChat);
+$('chatForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const v = $('chatText').value.trim();
+  if (!v || !requestId) return;
+  $('chatText').value = '';
+  addChatMsg('customer', v, new Date().toISOString());
+  try {
+    await api(`/api/requests/${requestId}/messages`, 'POST', { sender: 'customer', text: v });
+  } catch (err) { toast('送信できませんでした'); }
+});
 
 async function cancelMatch() {
   clearInterval(etaTimer);
@@ -443,6 +555,7 @@ async function cancelMatch() {
 }
 
 $('reselectBtn').addEventListener('click', async () => {
+  hideChat();
   await cancelMatch();
   toast('別のカメラマンを選べます');
   await showSelect();
@@ -450,6 +563,7 @@ $('reselectBtn').addEventListener('click', async () => {
 
 $('cancelReqBtn').addEventListener('click', async () => {
   if (!confirm('この依頼をキャンセルしますか？')) return;
+  hideChat();
   await cancelMatch();
   toast('依頼をキャンセルしました');
   show('step-plan');
@@ -457,6 +571,7 @@ $('cancelReqBtn').addEventListener('click', async () => {
 });
 
 $('backToPlan').addEventListener('click', () => {
+  hideChat();
   if (photoSocket) photoSocket.close();
   show('step-plan');
   validate();
