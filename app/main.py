@@ -857,6 +857,14 @@ def gallery_data(token: str):
 
 
 # ---------------- API: operator stats ----------------
+def _area_of(location: Optional[str]) -> str:
+    """Derive an area name from a free-text shoot location like '京都・清水寺'."""
+    if not location:
+        return "未指定"
+    head = location.split("・")[0].replace("エリア", "").strip()
+    return head or "未指定"
+
+
 @app.get("/api/stats")
 def stats():
     with db() as conn:
@@ -872,7 +880,20 @@ def stats():
                FROM requests r LEFT JOIN photographers p ON r.photographer_id=p.id
                ORDER BY r.id DESC LIMIT 20"""
         ).fetchall()
+        # live demand per area (active = waiting/matched/shooting)
+        active_rows = conn.execute(
+            "SELECT location, status FROM requests WHERE status IN ('waiting','matched','shooting')"
+        ).fetchall()
     match_rate = round((total - waiting) / total * 100) if total else 0
+    # aggregate live demand by area (active = waiting/matched/shooting)
+    agg: dict[str, dict] = {}
+    for r in active_rows:
+        a = agg.setdefault(_area_of(r["location"]), {"active": 0, "waiting": 0})
+        a["active"] += 1
+        if r["status"] == "waiting":
+            a["waiting"] += 1
+    by_area = [{"name": k, "active": v["active"], "waiting": v["waiting"]}
+               for k, v in sorted(agg.items(), key=lambda kv: (-kv[1]["active"], kv[0]))]
     return {
         "online": online,
         "busy": busy,
@@ -881,6 +902,7 @@ def stats():
         "done": done,
         "total": total,
         "match_rate": match_rate,
+        "by_area": by_area,
         "recent": [dict(r) for r in recent],
     }
 

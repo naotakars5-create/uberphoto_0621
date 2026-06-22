@@ -562,6 +562,23 @@ table { width:100%; border-collapse: collapse; font-size: 13px; }
 th, td { text-align:left; padding: 11px 6px; border-bottom: 1px solid var(--line); }
 th { color: var(--ink-soft); font-weight: 700; font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; }
 
+/* ---------- landing: coverage areas ---------- */
+.area-chips { display:flex; flex-wrap:wrap; gap:9px; }
+.area-chip { display:inline-flex; align-items:center; gap:7px; padding:9px 15px; border-radius:999px;
+  background:var(--surface); border:1px solid var(--line-strong); box-shadow:var(--shadow);
+  font-size:13.5px; font-weight:700; color:var(--ink); text-decoration:none; transition:transform .15s, box-shadow .15s; }
+.area-chip:active { transform:scale(.96); }
+.area-chip .ac-emoji { font-size:15px; line-height:1; }
+
+/* ---------- operator: area demand ---------- */
+.area-demand { display:flex; flex-direction:column; gap:10px; }
+.ad-row { display:grid; grid-template-columns: 84px 1fr auto; align-items:center; gap:12px; }
+.ad-name { font-weight:700; font-size:13.5px; }
+.ad-track { height:10px; border-radius:999px; background:var(--surface-2); overflow:hidden; }
+.ad-fill { height:100%; border-radius:999px; background:linear-gradient(90deg,var(--brand1),var(--brand2)); transition:width .4s ease; }
+.ad-num { font-size:12.5px; color:var(--ink-soft); font-weight:700; white-space:nowrap; }
+.ad-wait { color:#c98a1b; font-weight:700; }
+
 /* ---------- gallery ---------- */
 .grid { display:grid; grid-template-columns: repeat(2,1fr); gap: 10px; }
 .gphoto { position:relative; border-radius: var(--radius); overflow:hidden; box-shadow:var(--shadow); cursor:pointer; }

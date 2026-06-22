@@ -35,7 +35,7 @@
 
     <!-- live availability -->
     <div class="live-pill reveal" id="livePill">
-      <span class="dot"></span><span id="liveText">いま浅草エリアの待機状況を確認中…</span>
+      <span class="dot"></span><span id="liveText">いまの待機状況を確認中…</span>
     </div>
 
     <!-- stats -->
@@ -48,6 +48,14 @@
     <!-- CTA -->
     <a class="btn brand reveal" href="/customer" style="margin-top:22px">今すぐ撮影を頼む <i data-icon="arrow" data-size="19"></i></a>
     <a class="btn secondary reveal" href="/photographer" style="margin-top:12px">カメラマンとして参加</a>
+
+    <!-- coverage areas -->
+    <div class="section reveal">
+      <div class="section-head"><h2>対応エリア</h2><a class="more" href="/customer" style="text-decoration:none">撮影を頼む ›</a></div>
+      <div id="areaChips" class="area-chips">
+        <span class="muted" style="font-size:13px">読み込み中…</span>
+      </div>
+    </div>
 
     <!-- how it works -->
     <div class="section">
@@ -129,7 +137,7 @@
       <button class="ib-close" id="installClose" aria-label="閉じる">×</button>
     </div>
 
-    <p class="footnote center">浅草エリア ／ 土日 14:00–18:00 試験運用中</p>
+    <p class="footnote center">東京・京都・大阪ほか 全国の観光地に対応 ／ β運用中</p>
   </div>
 
   <!-- first-run onboarding -->
@@ -155,12 +163,21 @@
       const el = document.getElementById('liveText');
       if (!el) return;
       if (typeof s.online === 'number' && s.online > 0) {
-        el.innerHTML = `いま浅草エリアで <b>${s.online}人</b> のプロが待機中`;
+        el.innerHTML = `いま全国で <b>${s.online}人</b> のプロが待機中`;
       } else {
         el.textContent = '次の試験運用は土日 14:00–18:00';
         const d = document.querySelector('#livePill .dot');
         if (d) d.style.background = 'var(--gold)';
       }
+    }).catch(() => {});
+
+    // ---- coverage areas (from /api/areas) ----
+    fetch('/api/areas').then((r) => r.json()).then((areas) => {
+      const el = document.getElementById('areaChips');
+      if (!el || !Array.isArray(areas) || !areas.length) return;
+      el.innerHTML = areas.map((a) =>
+        `<a class="area-chip" href="/customer"><span class="ac-emoji">${a.emoji || '📍'}</span>${a.name}</a>`
+      ).join('');
     }).catch(() => {});
 
     // ---- onboarding (shown once) ----
