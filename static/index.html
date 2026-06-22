@@ -12,42 +12,44 @@
   <link rel="stylesheet" href="/static/css/app.css">
 </head>
 <body>
-  <div class="app">
+  <div class="app home">
     <div class="aura" aria-hidden="true"></div>
     <div class="topbar">
       <div class="logo"><span class="u">Uber</span>PHOTO</div>
       <div class="badge">β MVP</div>
     </div>
 
-    <!-- HERO -->
-    <div class="hero reveal">
+    <!-- IMMERSIVE HERO -->
+    <header class="home-hero reveal">
       <img src="/static/img/hero.jpg" alt="">
-      <div class="hero-badge">
-        <i data-icon="star" data-size="15" class="hb-star"></i>
-        <div><b>4.9</b><small>満足度</small></div>
+      <div class="hh-scrim"></div>
+      <div class="hh-chips">
+        <div class="glass-chip live" id="livePill"><span class="dot"></span><span id="liveText" data-i18n="live_checking">いまの待機状況を確認中…</span></div>
+        <div class="glass-chip rating"><i data-icon="star" data-size="13" class="hb-star"></i><b>4.9</b></div>
       </div>
-      <div class="hero-inner">
+      <div class="hh-body">
         <p class="eyebrow" data-i18n="hero_eyebrow">Tourist × Photographer</p>
         <h1 data-i18n-html="hero_h1">旅の一瞬を、<br>作品に変える。</h1>
-        <p data-i18n="hero_sub">近くのプロと、その場でマッチング。30分で、自然な一枚を。</p>
+        <p class="hh-sub" data-i18n="hero_sub">近くのプロと、その場でマッチング。30分で、自然な一枚を。</p>
+        <a class="btn brand hh-cta" href="/customer"><span data-i18n="cta_order_now">今すぐ撮影を頼む</span> <i data-icon="arrow" data-size="19"></i></a>
+        <a class="hh-join" href="/photographer"><span data-i18n="cta_join">カメラマンとして参加</span> <i data-icon="arrow" data-size="15"></i></a>
+      </div>
+    </header>
+
+    <!-- bento stats -->
+    <div class="bento reveal">
+      <div class="bento-cell"><div class="bc-v"><i data-icon="star" data-size="16"></i>4.9</div><div class="bc-k" data-i18n="stat_rating">平均評価</div></div>
+      <div class="bento-cell"><div class="bc-v">1,200<span class="bc-plus">+</span></div><div class="bc-k" data-i18n="stat_shots">撮影実績</div></div>
+      <div class="bento-cell"><div class="bc-v">30<span class="bc-unit" data-i18n="stat_min_unit">分</span></div><div class="bc-k" data-i18n="stat_receive">で受け取り</div></div>
+    </div>
+
+    <!-- photo marquee -->
+    <div class="marquee reveal" aria-hidden="true">
+      <div class="marquee-track">
+        <img src="/static/img/work1.jpg" alt=""><img src="/static/img/work2.jpg" alt=""><img src="/static/img/work3.jpg" alt=""><img src="/static/img/work4.jpg" alt=""><img src="/static/img/work5.jpg" alt=""><img src="/static/img/work6.jpg" alt="">
+        <img src="/static/img/work1.jpg" alt=""><img src="/static/img/work2.jpg" alt=""><img src="/static/img/work3.jpg" alt=""><img src="/static/img/work4.jpg" alt=""><img src="/static/img/work5.jpg" alt=""><img src="/static/img/work6.jpg" alt="">
       </div>
     </div>
-
-    <!-- live availability -->
-    <div class="live-pill reveal" id="livePill">
-      <span class="dot"></span><span id="liveText" data-i18n="live_checking">いまの待機状況を確認中…</span>
-    </div>
-
-    <!-- stats -->
-    <div class="stats-bar reveal">
-      <div class="item"><div class="v"><i data-icon="star" data-size="17"></i>4.9</div><div class="k" data-i18n="stat_rating">平均評価</div></div>
-      <div class="item"><div class="v">1,200<span style="font-size:14px">+</span></div><div class="k" data-i18n="stat_shots">撮影実績</div></div>
-      <div class="item"><div class="v">30<span style="font-size:14px" data-i18n="stat_min_unit">分</span></div><div class="k" data-i18n="stat_receive">で受け取り</div></div>
-    </div>
-
-    <!-- CTA -->
-    <a class="btn brand reveal" href="/customer" style="margin-top:22px"><span data-i18n="cta_order_now">今すぐ撮影を頼む</span> <i data-icon="arrow" data-size="19"></i></a>
-    <a class="btn secondary reveal" href="/photographer" style="margin-top:12px" data-i18n="cta_join">カメラマンとして参加</a>
 
     <!-- coverage areas -->
     <div class="section reveal">
