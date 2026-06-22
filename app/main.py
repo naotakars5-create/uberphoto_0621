@@ -55,7 +55,7 @@ ASAKUSA = (35.7148, 139.7967)
 # mini-map layout + distance estimate) and a "best light" hint.
 AREAS = [
     {
-        "id": "tokyo", "name": "東京", "emoji": "🗼",
+        "id": "tokyo", "name": "東京", "name_en": "Tokyo", "emoji": "🗼",
         "spots": [
             {"name": "雷門（浅草）", "hint": "午前は順光で顔が明るく写ります", "lat": 35.7108, "lng": 139.7967},
             {"name": "仲見世通り", "hint": "夕方は提灯に灯りが入って雰囲気◎", "lat": 35.7118, "lng": 139.7960},
@@ -70,7 +70,7 @@ AREAS = [
         ],
     },
     {
-        "id": "kyoto", "name": "京都", "emoji": "⛩️",
+        "id": "kyoto", "name": "京都", "name_en": "Kyoto", "emoji": "⛩️",
         "spots": [
             {"name": "清水寺", "hint": "朝いちは人が少なく舞台を独り占め", "lat": 34.9949, "lng": 135.7850},
             {"name": "伏見稲荷大社 千本鳥居", "hint": "早朝は鳥居が空くので狙い目", "lat": 34.9671, "lng": 135.7727},
@@ -81,7 +81,7 @@ AREAS = [
         ],
     },
     {
-        "id": "osaka", "name": "大阪", "emoji": "🐙",
+        "id": "osaka", "name": "大阪", "name_en": "Osaka", "emoji": "🐙",
         "spots": [
             {"name": "大阪城", "hint": "晴れた午前、天守と青空を背景に", "lat": 34.6873, "lng": 135.5259},
             {"name": "道頓堀 グリコサイン", "hint": "夜のネオンで大阪らしい一枚", "lat": 34.6687, "lng": 135.5013},
@@ -90,7 +90,7 @@ AREAS = [
         ],
     },
     {
-        "id": "kanagawa", "name": "神奈川", "emoji": "🌊",
+        "id": "kanagawa", "name": "神奈川", "name_en": "Kanagawa", "emoji": "🌊",
         "spots": [
             {"name": "鎌倉 高徳院（大仏）", "hint": "午前のやわらかい光がおすすめ", "lat": 35.3169, "lng": 139.5358},
             {"name": "江ノ島", "hint": "夕暮れのサンセットが絶景", "lat": 35.2996, "lng": 139.4807},
@@ -99,7 +99,7 @@ AREAS = [
         ],
     },
     {
-        "id": "nara", "name": "奈良", "emoji": "🦌",
+        "id": "nara", "name": "奈良", "name_en": "Nara", "emoji": "🦌",
         "spots": [
             {"name": "東大寺 大仏殿", "hint": "午前は順光で建物がくっきり", "lat": 34.6890, "lng": 135.8398},
             {"name": "奈良公園（鹿）", "hint": "朝夕は鹿がのんびりで撮りやすい", "lat": 34.6851, "lng": 135.8430},
@@ -107,7 +107,7 @@ AREAS = [
         ],
     },
     {
-        "id": "hokkaido", "name": "北海道", "emoji": "❄️",
+        "id": "hokkaido", "name": "北海道", "name_en": "Hokkaido", "emoji": "❄️",
         "spots": [
             {"name": "小樽運河", "hint": "夕暮れ〜夜のガス灯が幻想的", "lat": 43.1986, "lng": 140.9947},
             {"name": "函館山 夜景", "hint": "日没後のブルーアワーが絶景", "lat": 41.7596, "lng": 140.7045},
@@ -115,7 +115,7 @@ AREAS = [
         ],
     },
     {
-        "id": "okinawa", "name": "沖縄", "emoji": "🌺",
+        "id": "okinawa", "name": "沖縄", "name_en": "Okinawa", "emoji": "🌺",
         "spots": [
             {"name": "美ら海水族館", "hint": "午後の海辺の光がきれい", "lat": 26.6943, "lng": 127.8779},
             {"name": "首里城", "hint": "午前は順光で朱色が鮮やか", "lat": 26.2170, "lng": 127.7196},
@@ -260,6 +260,7 @@ def photographer_view(row, origin=None):
         "reviews": merged_reviews(pid),
         "distance_km": dist,
         "eta_min": eta,
+        "area": row["area"] or "",
         "is_demo": bool(row["is_demo"]),
     }
 
@@ -342,14 +343,15 @@ def get_areas():
 class PhotographerIn(BaseModel):
     name: str
     phone: Optional[str] = None
+    area: Optional[str] = None
 
 
 @app.post("/api/photographers")
 def register_photographer(p: PhotographerIn):
     with db() as conn:
         cur = conn.execute(
-            "INSERT INTO photographers (name, phone, status) VALUES (?, ?, 'offline')",
-            (p.name, p.phone),
+            "INSERT INTO photographers (name, phone, area, status) VALUES (?, ?, ?, 'offline')",
+            (p.name, p.phone, (p.area or "").strip() or None),
         )
         pid = cur.lastrowid
         rating, shots, specialty, thumb = synth_profile(pid)
@@ -361,18 +363,26 @@ def register_photographer(p: PhotographerIn):
 
 
 @app.get("/api/photographers/nearby")
-def nearby_photographers(lat: Optional[float] = None, lng: Optional[float] = None):
-    """Up to 3 nearby online photographers, sorted by real distance from the
-    customer (if their location is provided)."""
+def nearby_photographers(
+    lat: Optional[float] = None, lng: Optional[float] = None, area: Optional[str] = None
+):
+    """Up to 3 nearby online photographers. Photographers whose declared service
+    area matches the customer's chosen area are surfaced first, then by real
+    distance. Demo photographers act as fallback supply and match any area."""
     origin = (lat, lng) if lat is not None and lng is not None else None
+    area = (area or "").strip()
     with db() as conn:
         rows = conn.execute("SELECT * FROM photographers WHERE status='online'").fetchall()
-    views = [photographer_view(r, origin) for r in rows]
-    # closest first; if no location, real photographers first then by distance
-    if origin:
-        views.sort(key=lambda v: v["distance_km"])
-    else:
-        views.sort(key=lambda v: (v["is_demo"], v["distance_km"]))
+    views = []
+    for r in rows:
+        v = photographer_view(r, origin)
+        # a demo shows the customer's area (it's fallback supply available anywhere)
+        if v["is_demo"] and area:
+            v["area"] = area
+        v["area_match"] = bool(area) and (v["is_demo"] or v["area"] == area)
+        views.append(v)
+    # area match first, then closest; demos rank after real photographers at a tie
+    views.sort(key=lambda v: (not v["area_match"], v["is_demo"], v["distance_km"]))
     return views[:3]
 
 
@@ -731,6 +741,31 @@ def submit_review(rid: int, r: ReviewIn):
             blended = round((prior * n + rating) / (n + 1), 2)
             conn.execute("UPDATE photographers SET rating=? WHERE id=?", (blended, req["photographer_id"]))
     return {"ok": True}
+
+
+# ---------------- API: tip ----------------
+class TipIn(BaseModel):
+    amount: int
+
+
+@app.post("/api/requests/{rid}/tip")
+async def add_tip(rid: int, t: TipIn):
+    """Customer adds an optional gratuity after a completed shoot. Accumulates
+    if tipped more than once. Notifies the photographer in realtime."""
+    amount = max(0, min(50000, int(t.amount)))
+    if amount <= 0:
+        raise HTTPException(400, "invalid tip")
+    with db() as conn:
+        req = conn.execute("SELECT photographer_id, tip FROM requests WHERE id=?", (rid,)).fetchone()
+        if not req:
+            raise HTTPException(404, "request not found")
+        total = (req["tip"] or 0) + amount
+        conn.execute("UPDATE requests SET tip=? WHERE id=?", (total, rid))
+        pid = req["photographer_id"]
+    if pid:
+        await manager.send_to_photographer(pid, {"type": "tip", "request_id": rid, "amount": amount})
+    await manager.broadcast_to_operators({"type": "stats_changed"})
+    return {"ok": True, "tip": total}
 
 
 # ---------------- API: chat (customer ⇄ photographer) ----------------

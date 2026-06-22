@@ -38,50 +38,61 @@ function layoutSpots(list) {
   });
 }
 
-const PEOPLE_OPTS = ['1人', '2人', '3〜4人', '5人以上'];
-const SCENE_OPTS = ['記念', 'カップル', '家族', '友達', 'ソロ活', 'プロフィール'];
+// Canonical values stored/sent to the backend stay Japanese (the photographer
+// reads them); only the chip labels are localized, index-aligned with these.
+const PEOPLE_JA = ['1人', '2人', '3〜4人', '5人以上'];
+const SCENE_JA = ['記念', 'カップル', '家族', '友達', 'ソロ活', 'プロフィール'];
 
 function initDetails() {
   // area picker drives the spot picker
   $('areaSelect').addEventListener('change', (e) => selectArea(e.target.value));
   $('spotSelect').addEventListener('change', (e) => { if (e.target.value) selectSpot(e.target.value); });
+  renderPeopleChips();
+  renderSceneChips();
+  hydrateIcons($('step-plan'));
+}
 
-  // people (single-select)
+// people (single-select)
+function renderPeopleChips() {
   const pc = $('peopleChips');
-  PEOPLE_OPTS.forEach((p) => {
+  const labels = tRaw('people_opts');
+  pc.innerHTML = '';
+  PEOPLE_JA.forEach((val, i) => {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'opt-chip';
-    b.textContent = p;
+    b.className = 'opt-chip' + (selectedPeople === val ? ' on' : '');
+    b.textContent = (labels && labels[i]) || val;
     b.onclick = () => {
-      const on = selectedPeople === p;
-      selectedPeople = on ? '' : p;
+      const on = selectedPeople === val;
+      selectedPeople = on ? '' : val;
       pc.querySelectorAll('.opt-chip').forEach((x) => x.classList.remove('on'));
       if (!on) b.classList.add('on');
     };
     pc.appendChild(b);
   });
+}
 
-  // scene (multi-select)
+// scene (multi-select)
+function renderSceneChips() {
   const cc = $('sceneChips');
-  SCENE_OPTS.forEach((s) => {
+  const labels = tRaw('scene_opts');
+  cc.innerHTML = '';
+  SCENE_JA.forEach((val, i) => {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'opt-chip';
-    b.textContent = s;
+    b.className = 'opt-chip' + (selectedScenes.includes(val) ? ' on' : '');
+    b.textContent = (labels && labels[i]) || val;
     b.onclick = () => {
-      if (selectedScenes.includes(s)) {
-        selectedScenes = selectedScenes.filter((x) => x !== s);
+      if (selectedScenes.includes(val)) {
+        selectedScenes = selectedScenes.filter((x) => x !== val);
         b.classList.remove('on');
       } else {
-        selectedScenes.push(s);
+        selectedScenes.push(val);
         b.classList.add('on');
       }
     };
     cc.appendChild(b);
   });
-
-  hydrateIcons($('step-plan'));
 }
 
 // Load selectable areas (都道府県) and populate the area dropdown.
@@ -95,11 +106,21 @@ async function loadAreas() {
   areas.forEach((a, i) => {
     const o = document.createElement('option');
     o.value = a.id;
-    o.textContent = `${a.emoji || ''} ${a.name}`.trim();
+    o.textContent = `${a.emoji || ''} ${areaLabel(a)}`.trim();
     if (i === 0) o.selected = true;
     sel.appendChild(o);
   });
   selectArea(areas[0].id);
+}
+
+// refresh the area dropdown labels in place (keeps current selection)
+function relabelAreas() {
+  const sel = $('areaSelect');
+  if (!sel || !areas.length) return;
+  Array.from(sel.options).forEach((o) => {
+    const a = areas.find((x) => x.id === o.value);
+    if (a) o.textContent = `${a.emoji || ''} ${areaLabel(a)}`.trim();
+  });
 }
 
 // Switch the active area: rebuild the spot dropdown + map pins, reset selection.
@@ -112,7 +133,7 @@ function selectArea(areaId) {
   spotLatLng = null;
 
   const sel = $('spotSelect');
-  sel.innerHTML = `<option value="" disabled selected>${currentArea.name}のスポットを選ぶ…</option>`;
+  sel.innerHTML = `<option value="" disabled selected>${t('spot_select_default', { area: areaLabel(currentArea) })}</option>`;
   spots.forEach((s) => {
     const o = document.createElement('option');
     o.value = s.name;
@@ -131,8 +152,8 @@ function selectArea(areaId) {
     g.addEventListener('click', () => selectSpot(g.dataset.name));
   });
 
-  $('mapCap').innerHTML = `${icon('map', 13)}<span>${escapeHtml(currentArea.name)}・ピンをタップして選択</span>`;
-  $('spotHint').querySelector('span').textContent = 'スポットを選ぶと、きれいに撮れる時間帯のヒントが出ます';
+  $('mapCap').innerHTML = `${icon('map', 13)}<span>${escapeHtml(t('map_cap_area', { area: areaLabel(currentArea) }))}</span>`;
+  $('spotHint').querySelector('span').textContent = t('spot_hint_default');
   validate();
 }
 
@@ -149,6 +170,11 @@ function selectSpot(name) {
   if (s) $('spotHint').querySelector('span').textContent = s.hint;
   validate();
 }
+
+// Name with the Japanese honorific "さん" (omitted in English).
+function nm(name) { return getLang() === 'ja' ? `${name} さん` : (name || ''); }
+// EN label for a JP area name (falls back to the JP name).
+function areaLabelByName(jp) { const a = areas.find((x) => x.name === jp); return a ? areaLabel(a) : jp; }
 
 // Human-readable shoot location, e.g. "京都・清水寺" or "東京エリア".
 function locationLabel() {
@@ -175,23 +201,44 @@ function setStage(n) {
 }
 
 const PLAN_THUMBS = { light: 'strip2', standard: 'strip3', premium: 'strip4' };
-const PLAN_TAGS = { standard: '人気 No.1', premium: 'いちばん多く撮れる' };
+
+// localized helpers (canonical values stay JP for the backend)
+function planName(key) {
+  const m = tRaw('plan_names');
+  return (m && m[key]) || (plans[key] && plans[key].label.split(' ')[0]) || key;
+}
+function planTag(key) { const m = tRaw('plan_tags'); return m && m[key]; }
+function peopleDisplay(val) {
+  const i = PEOPLE_JA.indexOf(val);
+  const labels = tRaw('people_opts');
+  return (i >= 0 && labels && labels[i]) || val;
+}
+function sceneDisplay(arr) {
+  const labels = tRaw('scene_opts');
+  return arr.map((v) => { const i = SCENE_JA.indexOf(v); return (i >= 0 && labels && labels[i]) || v; });
+}
 
 async function loadPlans() {
   plans = await api('/api/plans');
+  renderPlans();
+}
+
+function renderPlans() {
   const wrap = $('plans');
+  if (!wrap) return;
   wrap.innerHTML = '';
   Object.entries(plans).forEach(([key, p]) => {
     const div = document.createElement('div');
-    div.className = 'plan';
+    div.className = 'plan' + (selectedPlan === key ? ' selected' : '');
     div.dataset.key = key;
+    const tag = planTag(key);
     div.innerHTML = `
       <div class="plan-row">
         <img class="plan-thumb" src="/static/img/${PLAN_THUMBS[key] || 'strip1'}.jpg" alt="">
         <div class="plan-info">
-          <span class="plan-name">${p.label.split(' ')[0]}</span>
-          <span class="plan-sub">${p.minutes}分 / ${p.shots}枚 · 撮ってすぐ共有</span>
-          ${PLAN_TAGS[key] ? `<span class="plan-tag">${PLAN_TAGS[key]}</span>` : ''}
+          <span class="plan-name">${planName(key)}</span>
+          <span class="plan-sub">${t('plan_blurb', { min: p.minutes, shots: p.shots })}</span>
+          ${tag ? `<span class="plan-tag">${tag}</span>` : ''}
         </div>
         <div class="plan-price"><span class="yen">¥</span>${p.price.toLocaleString('ja-JP')}<span class="tax">税込</span></div>
       </div>`;
@@ -210,7 +257,7 @@ function selectPlan(key, el) {
 // updates the sticky CTA summary + enabled state
 function validate() {
   if (!selectedPlan) {
-    $('ctaPlan').textContent = 'プランを選択してください';
+    $('ctaPlan').textContent = t('cta_pick_plan');
     $('ctaPrice').textContent = '—';
     $('toPay').disabled = true;
     return;
@@ -218,10 +265,10 @@ function validate() {
   const p = plans[selectedPlan];
   $('ctaPrice').innerHTML = `¥${p.price.toLocaleString('ja-JP')}<span class="tax">税込</span>`;
   if (!$('name').value.trim()) {
-    $('ctaPlan').textContent = 'お名前を入力してください';
+    $('ctaPlan').textContent = t('cta_enter_name');
     $('toPay').disabled = true;
   } else {
-    $('ctaPlan').textContent = `${p.label.split(' ')[0]} · ${p.minutes}分/${p.shots}枚`;
+    $('ctaPlan').textContent = `${planName(selectedPlan)} · ${t('plan_min_shots', { min: p.minutes, shots: p.shots })}`;
     $('toPay').disabled = false;
   }
 }
@@ -233,16 +280,16 @@ function showConfirm() {
   const p = plans[selectedPlan];
   const base = Math.round(p.price / 1.1);
   const tax = p.price - base;
-  $('cf-plan').textContent = p.label.split(' ')[0];
-  $('cf-shots').textContent = p.shots + '枚';
-  $('cf-min').textContent = p.minutes + '分';
+  $('cf-plan').textContent = planName(selectedPlan);
+  $('cf-shots').textContent = p.shots + t('unit_shots');
+  $('cf-min').textContent = p.minutes + t('unit_min');
   $('cf-loc').textContent = locationLabel();
   // optional details: hide the row when empty
   const note = $('note').value.trim();
   $('cf-people-row').style.display = selectedPeople ? '' : 'none';
-  $('cf-people').textContent = selectedPeople;
+  $('cf-people').textContent = peopleDisplay(selectedPeople);
   $('cf-scene-row').style.display = selectedScenes.length ? '' : 'none';
-  $('cf-scene').textContent = selectedScenes.join('・');
+  $('cf-scene').textContent = sceneDisplay(selectedScenes).join('・');
   $('cf-note-row').style.display = note ? '' : 'none';
   $('cf-note').textContent = note;
   $('cf-name').textContent = $('name').value.trim();
@@ -256,7 +303,7 @@ $('confirmBack').addEventListener('click', () => show('step-plan'));
 
 $('confirmPay').addEventListener('click', async () => {
   $('confirmPay').disabled = true;
-  $('confirmPay').innerHTML = '決済処理中…';
+  $('confirmPay').innerHTML = t('paying');
   try {
     // shoot happens at the chosen spot; use its coordinates, falling back to GPS
     customerPos = spotLatLng || (await getPosition()); // captured before any Stripe redirect
@@ -272,6 +319,7 @@ $('confirmPay').addEventListener('click', async () => {
     });
     requestId = order.request_id;
     store('lastRequestId', requestId);
+    store('lastArea', (currentArea && currentArea.name) || '');
     if (order.mode === 'stripe' && order.checkout_url) {
       window.location = order.checkout_url; // → Stripe Checkout, returns to /customer?session_id=...
       return;
@@ -282,7 +330,7 @@ $('confirmPay').addEventListener('click', async () => {
   } catch (e) {
     toast('エラー: ' + e.message);
     $('confirmPay').disabled = false;
-    $('confirmPay').innerHTML = 'この内容で決済して依頼 ' + icon('arrow', 19);
+    $('confirmPay').innerHTML = t('btn_confirm_pay') + ' ' + icon('arrow', 19);
   }
 });
 
@@ -323,11 +371,14 @@ async function showSelect() {
   show('step-select');
   const wrap = $('photographers');
   wrap.innerHTML = SKELETON;
-  let q = '';
-  if (customerPos) q = `?lat=${customerPos.lat}&lng=${customerPos.lng}`;
+  const params = new URLSearchParams();
+  if (customerPos) { params.set('lat', customerPos.lat); params.set('lng', customerPos.lng); }
+  const areaName = (currentArea && currentArea.name) || store('lastArea') || '';
+  if (areaName) params.set('area', areaName);
+  const q = params.toString() ? `?${params}` : '';
   let errored = false;
   try { nearbyList = await api('/api/photographers/nearby' + q); } catch (e) { errored = true; nearbyList = []; }
-  $('nearCount').textContent = errored ? '通信エラー' : `近くに${nearbyList.length}人`;
+  $('nearCount').textContent = errored ? t('comm_error') : t('near_count', { n: nearbyList.length });
 
   const omakaseBtn = $('omakaseBtn');
   const hasList = nearbyList.length > 0;
@@ -337,7 +388,7 @@ async function showSelect() {
 
   if (hasList) {
     const best = nearbyList[0];
-    $('omakaseDesc').textContent = `最短 ${best.name} さん・約${best.eta_min}分でお迎え`;
+    $('omakaseDesc').textContent = t('omakase_desc', { name: best.name, eta: best.eta_min });
     omakaseBtn.onclick = () => choosePhotographer(best);
   }
 
@@ -345,9 +396,9 @@ async function showSelect() {
     wrap.innerHTML = `
       <div class="empty-state">
         <div class="es-ic">${icon('zap', 30)}</div>
-        <div class="es-title">通信エラーが発生しました</div>
-        <div class="es-desc">ネットワーク環境をご確認のうえ、もう一度お試しください。</div>
-        <button class="btn brand" id="retryNearby">${icon('refresh', 18)} 再読み込み</button>
+        <div class="es-title">${t('err_title')}</div>
+        <div class="es-desc">${t('err_desc')}</div>
+        <button class="btn brand" id="retryNearby">${icon('refresh', 18)} ${t('retry')}</button>
       </div>`;
     $('retryNearby').onclick = showSelect;
     return;
@@ -356,33 +407,33 @@ async function showSelect() {
     wrap.innerHTML = `
       <div class="empty-state">
         <div class="es-ic">${icon('map', 30)}</div>
-        <div class="es-title">いま近くに待機中のカメラマンがいません</div>
-        <div class="es-desc">土日 14:00–18:00 の混雑時間は見つかりやすくなります。少し時間をおいて再検索してください。</div>
-        <button class="btn brand" id="retryNearby">${icon('refresh', 18)} もう一度さがす</button>
-        <button class="btn secondary" id="notifyNearby">空き次第、通知を受け取る</button>
+        <div class="es-title">${t('none_title')}</div>
+        <div class="es-desc">${t('none_desc')}</div>
+        <button class="btn brand" id="retryNearby">${icon('refresh', 18)} ${t('research')}</button>
+        <button class="btn secondary" id="notifyNearby">${t('notify_when')}</button>
       </div>`;
     $('retryNearby').onclick = showSelect;
-    $('notifyNearby').onclick = () => { requestNotifyPermission(); toast('カメラマンが見つかったら通知します'); };
+    $('notifyNearby').onclick = () => { requestNotifyPermission(); toast(t('notify_set')); };
     return;
   }
   wrap.innerHTML = '';
   nearbyList.forEach((p) => {
-    const tags = (p.tags || []).filter(Boolean).map((t) => `<span class="tag">${t}</span>`).join('');
+    const tags = (p.tags || []).filter(Boolean).map((tag) => `<span class="tag">${tag}</span>`).join('');
     const div = document.createElement('div');
     div.className = 'pick-card';
     div.innerHTML = `
       <div class="pick-top">
         <img class="pick-thumb" src="${p.thumb}" alt="">
         <div style="flex:1">
-          <div class="pick-name">${p.name} <span class="verified" title="本人確認済み">${icon('shield', 15)}</span></div>
-          <div class="pick-rt">${icon('star', 14)}${p.rating} · ${p.shots}件</div>
+          <div class="pick-name">${p.name} <span class="verified" title="${t('verified_title')}">${icon('shield', 15)}</span></div>
+          <div class="pick-rt">${icon('star', 14)}${p.rating} · ${p.shots}${t('unit_shoots')}</div>
           <div class="pick-tags">${tags}</div>
         </div>
         <span class="pick-chevron">${icon('chevron', 18)}</span>
       </div>
       <div class="pick-foot">
-        <div class="pick-meta">${icon('pin', 14)}${p.distance_km}km · 約${p.eta_min}分でお迎え</div>
-        <button class="btn brand pick-btn">選ぶ</button>
+        <div class="pick-meta">${icon('pin', 14)}${t('pick_eta', { km: p.distance_km, eta: p.eta_min })}${p.area_match ? ` <span class="area-tag">${escapeHtml(t('area_match', { area: areaLabelByName(p.area || '') }))}</span>` : ''}</div>
+        <button class="btn brand pick-btn">${t('btn_choose')}</button>
       </div>`;
     // tap card → profile; tap 選ぶ → select directly
     div.querySelector('.pick-top').onclick = () => openProfile(p);
@@ -392,7 +443,7 @@ async function showSelect() {
 }
 
 function openProfile(p) {
-  const tags = (p.tags || []).filter(Boolean).map((t) => `<span class="tag">${t}</span>`).join('');
+  const tags = (p.tags || []).filter(Boolean).map((tag) => `<span class="tag">${tag}</span>`).join('');
   const portfolio = (p.portfolio || []).map((src) => `<img src="${src}" loading="lazy" alt="">`).join('');
   $('sheetBody').innerHTML = `
     <div class="sheet-handle"></div>
@@ -400,18 +451,18 @@ function openProfile(p) {
       <img class="sheet-avatar" src="${p.thumb}" alt="">
       <div style="flex:1">
         <div class="sheet-name">${p.name} <span class="verified">${icon('shield', 16)}</span></div>
-        <div class="pick-rt">${icon('star', 14)}${p.rating} · ${p.shots}件の撮影</div>
-        <div class="pick-meta" style="margin-top:4px">${icon('pin', 14)}${p.distance_km}km · 約${p.eta_min}分でお迎え</div>
+        <div class="pick-rt">${icon('star', 14)}${p.rating} · ${t('sheet_shoots', { n: p.shots })}</div>
+        <div class="pick-meta" style="margin-top:4px">${icon('pin', 14)}${t('pick_eta', { km: p.distance_km, eta: p.eta_min })}</div>
       </div>
     </div>
     <div class="pick-tags" style="margin:14px 0">${tags}</div>
     <p class="sheet-bio">${p.bio || ''}</p>
-    <div class="section-head" style="margin:18px 0 10px"><h2>作例</h2><span class="more">${(p.portfolio || []).length}枚</span></div>
+    <div class="section-head" style="margin:18px 0 10px"><h2>${t('portfolio_head')}</h2><span class="more">${(p.portfolio || []).length}${t('unit_photos')}</span></div>
     <div class="portfolio">${portfolio}</div>
-    <div class="section-head" style="margin:22px 0 10px"><h2>レビュー</h2><span class="more">${icon('star', 13)}${p.rating}</span></div>
+    <div class="section-head" style="margin:22px 0 10px"><h2>${t('reviews_head')}</h2><span class="more">${icon('star', 13)}${p.rating}</span></div>
     <div class="reviews">${(p.reviews || []).map(reviewHtml).join('')}</div>
-    <button class="btn brand" id="sheetSelect" style="margin-top:18px">${p.name} さんで撮影する ${icon('arrow', 19)}</button>
-    <button class="btn secondary" id="sheetClose2">閉じる</button>`;
+    <button class="btn brand" id="sheetSelect" style="margin-top:18px">${t('sheet_select', { name: p.name })} ${icon('arrow', 19)}</button>
+    <button class="btn secondary" id="sheetClose2">${t('btn_close')}</button>`;
   $('sheetSelect').onclick = () => { closeProfile(); choosePhotographer(p); };
   $('sheetClose2').onclick = closeProfile;
   const sheet = $('profileSheet');
@@ -444,7 +495,7 @@ async function choosePhotographer(p) {
     const res = await api(`/api/requests/${requestId}/select`, 'POST', { photographer_id: p.id });
     onMatched(res.photographer, res.gallery_token);
   } catch (e) {
-    toast(e.message === 'already matched' ? 'このカメラマンは他の依頼に対応中です' : 'エラー: ' + e.message);
+    toast(e.message === 'already matched' ? t('err_busy') : 'エラー: ' + e.message);
     showSelect();
   }
 }
@@ -456,17 +507,17 @@ function onMatched(p, token) {
   // chat becomes available the moment we match
   setupChat(p);
   // arrival screen
-  $('aName').textContent = p.name + ' さん';
+  $('aName').textContent = nm(p.name);
   $('aAvatar').textContent = (p.name || '?').charAt(0);
-  $('aMeta').innerHTML = `${icon('star', 14)}${p.rating} · ${p.distance_km}km 先から`;
+  $('aMeta').innerHTML = `${icon('star', 14)}${p.rating} · ${t('meta_from', { km: p.distance_km })}`;
   const mi = document.getElementById('markerInit');
   if (mi) mi.textContent = (p.name || 'P').charAt(0);
   // photos screen (prepared)
-  $('pName').textContent = p.name + ' さん';
+  $('pName').textContent = nm(p.name);
   $('pAvatar').textContent = (p.name || '?').charAt(0);
-  $('pMeta').innerHTML = `${icon('star', 14)}${p.rating} · 撮影中`;
+  $('pMeta').innerHTML = `${icon('star', 14)}${p.rating} · ${t('status_shooting')}`;
   $('toGallery').href = `/gallery?token=${galleryToken}`;
-  notify('UberPHOTO', `${p.name}さんが向かっています`);
+  notify('UberPHOTO', t('notif_otw', { name: p.name }));
   startEta(p.eta_min || 3);
   show('step-arriving');
   setStage(2);
@@ -478,8 +529,8 @@ function startEta(min) {
   let sec = Math.max(60, Math.round(min * 60));
   const tick = () => {
     if (sec <= 0) {
-      $('etaCount').textContent = '到着';
-      $('arriveTitle').textContent = 'まもなく到着';
+      $('etaCount').textContent = t('eta_arrived');
+      $('arriveTitle').textContent = t('arr_soon');
       clearInterval(etaTimer);
       return;
     }
@@ -499,18 +550,18 @@ function listenForPhotos() {
       show('step-matched');
       setStage(3);
       setTimeout(() => setStage(4), 900);
-      $('matchedTitle').textContent = '写真が届きました';
-      $('shotStatus').textContent = `📸 ${msg.count}枚 届きました`;
+      $('matchedTitle').textContent = t('photos_arrived_title');
+      $('shotStatus').textContent = t('photos_arrived_status', { n: msg.count });
       galleryToken = msg.gallery_token;
       $('toGallery').href = `/gallery?token=${galleryToken}`;
       $('toGallery').classList.remove('hidden');
-      notify('UberPHOTO', `写真が${msg.count}枚届きました`);
+      notify('UberPHOTO', t('notif_photos', { n: msg.count }));
     } else if (msg.type === 'session_complete') {
       show('step-matched');
       setStage(5);
-      $('matchedTitle').textContent = '撮影完了';
-      $('shotStatus').textContent = '✅ 撮影完了';
-      notify('UberPHOTO', '撮影が完了しました。写真を確認しましょう。');
+      $('matchedTitle').textContent = t('complete_title');
+      $('shotStatus').textContent = t('complete_status');
+      notify('UberPHOTO', t('notif_complete'));
       openReview();
     } else if (msg.type === 'message') {
       addChatMsg(msg.sender, msg.text, msg.created_at);
@@ -526,7 +577,7 @@ function setupChat(p) {
   chatLog = [];
   chatUnread = 0;
   $('chatAvatar').src = p.thumb || '/static/img/work1.jpg';
-  $('chatName').textContent = (p.name || 'カメラマン') + ' さん';
+  $('chatName').textContent = p.name ? nm(p.name) : t('chat_default_name');
   $('chatBadge').classList.add('hidden');
   $('chatFab').classList.remove('hidden');
   renderChat();
@@ -644,10 +695,42 @@ function paintStars() {
 }
 function openReview() {
   const card = $('reviewCard');
-  if (!card || card.dataset.done) return;
-  $('rvWho').textContent = matchedName ? `${matchedName} さんはいかがでしたか？` : 'カメラマンを評価しましょう';
-  card.classList.remove('hidden');
+  if (card && !card.dataset.done) {
+    $('rvWho').textContent = matchedName ? t('rv_who_named', { name: matchedName }) : t('rv_who');
+    card.classList.remove('hidden');
+  }
+  const tip = $('tipCard');
+  if (tip && !tip.dataset.done) {
+    $('tipWho').textContent = matchedName ? t('tip_who_named', { name: matchedName }) : t('tip_who');
+    tip.classList.remove('hidden');
+  }
 }
+
+// ---------- tip ----------
+let tipAmount = 0;
+document.querySelectorAll('#tipOpts .tip-opt').forEach((b) => {
+  b.addEventListener('click', () => {
+    tipAmount = Number(b.dataset.v);
+    document.querySelectorAll('#tipOpts .tip-opt').forEach((x) => x.classList.remove('on'));
+    b.classList.add('on');
+    $('tipSubmit').disabled = false;
+  });
+});
+$('tipSubmit').addEventListener('click', async () => {
+  if (!tipAmount || !requestId) return;
+  $('tipSubmit').disabled = true;
+  try {
+    await api(`/api/requests/${requestId}/tip`, 'POST', { amount: tipAmount });
+    $('tipOpts').style.display = 'none';
+    $('tipSubmit').style.display = 'none';
+    $('tipThanksText').textContent = `${yen(tipAmount)} のチップをありがとうございました！`;
+    $('tipThanks').classList.remove('hidden');
+    $('tipCard').dataset.done = '1';
+  } catch (e) {
+    toast('送信エラー: ' + e.message);
+    $('tipSubmit').disabled = false;
+  }
+});
 document.querySelectorAll('#starPick .star').forEach((b) => {
   b.addEventListener('click', () => {
     reviewStars = Number(b.dataset.v);
@@ -675,3 +758,21 @@ initDetails();
 loadAreas();
 loadPlans();
 handlePaymentReturn();
+
+// re-render JS-built content when the language changes (state preserved)
+document.addEventListener('langchange', () => {
+  renderPlans();
+  renderPeopleChips();
+  renderSceneChips();
+  relabelAreas();
+  validate();
+  // refresh spot picker labels for the current area without losing selection
+  if (currentArea) {
+    const sel = $('spotSelect');
+    if (sel && sel.options[0]) sel.options[0].textContent = t('spot_select_default', { area: areaLabel(currentArea) });
+    if (!selectedSpot) {
+      $('mapCap').innerHTML = `${icon('map', 13)}<span>${escapeHtml(t('map_cap_area', { area: areaLabel(currentArea) }))}</span>`;
+      $('spotHint').querySelector('span').textContent = t('spot_hint_default');
+    }
+  }
+});

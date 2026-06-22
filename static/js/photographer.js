@@ -26,12 +26,30 @@ $('registerBtn').addEventListener('click', async () => {
   const name = $('pname').value.trim();
   if (!name) { toast('お名前を入力してください'); return; }
   try {
-    const res = await api('/api/photographers', 'POST', { name, phone: $('pphone').value.trim() });
+    const res = await api('/api/photographers', 'POST', {
+      name, phone: $('pphone').value.trim(), area: $('pareaReg').value || null,
+    });
     me = { id: res.id, name: res.name };
     store('photographer', me);
     enterStandby();
   } catch (e) { toast('エラー: ' + e.message); }
 });
+
+// populate the registration area dropdown (mirrors the profile editor list)
+(async function fillRegisterAreas() {
+  const sel = $('pareaReg');
+  if (!sel) return;
+  try {
+    const list = await api('/api/areas');
+    sel.innerHTML = '<option value="">未設定</option>';
+    list.forEach((a) => {
+      const o = document.createElement('option');
+      o.value = a.name;
+      o.textContent = `${a.emoji || ''} ${a.name}`.trim();
+      sel.appendChild(o);
+    });
+  } catch (e) { sel.innerHTML = '<option value="">未設定</option>'; }
+})();
 
 function enterStandby() {
   show('step-standby');
@@ -247,6 +265,11 @@ function connect() {
         addPMsg(msg.sender, msg.text, msg.created_at);
         if (msg.sender === 'customer') notify(`${session.customer}さん`, msg.text);
       }
+    } else if (msg.type === 'tip') {
+      earnings += msg.amount;
+      $('todayEarn').textContent = yen(earnings);
+      toast(`💛 チップ ${yen(msg.amount)} を受け取りました！`);
+      notify('チップを受け取りました', `お客様から ${yen(msg.amount)} のチップ`);
     } else if (msg.type === 'cancelled') {
       // customer cancelled or switched photographer
       if (session) {

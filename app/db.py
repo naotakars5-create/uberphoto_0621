@@ -122,6 +122,7 @@ def init_db():
         _ensure_column(conn, "requests", "scene", "scene TEXT")
         _ensure_column(conn, "requests", "note", "note TEXT")
         _ensure_column(conn, "requests", "reviewed", "reviewed INTEGER NOT NULL DEFAULT 0")
+        _ensure_column(conn, "requests", "tip", "tip INTEGER NOT NULL DEFAULT 0")
         # photographer self-service profile (bio + own portfolio)
         _ensure_column(conn, "photographers", "bio", "bio TEXT")
         _ensure_column(conn, "photographers", "portfolio", "portfolio TEXT")

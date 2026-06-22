@@ -14,41 +14,42 @@
 <body>
   <div class="app">
     <div class="topbar">
-      <a class="navback" href="/" aria-label="ホームに戻る"><i data-icon="back" data-size="18"></i></a>
+      <a class="navback" href="/" aria-label="ホームに戻る" data-i18n-aria="nav_back"><i data-icon="back" data-size="18"></i></a>
       <a class="logo" href="/"><span class="u">Uber</span>PHOTO</a>
       <div class="badge">Gallery</div>
     </div>
 
     <section id="gallery-view">
-      <p class="eyebrow">Your photos</p>
-      <h1 id="title">あなたの写真</h1>
+      <p class="eyebrow" data-i18n="g_eyebrow">Your photos</p>
+      <h1 id="title" data-i18n="g_title">あなたの写真</h1>
       <p class="sub" id="meta"></p>
-      <div id="empty" class="card center muted hidden">まだ写真が届いていません。撮影が終わるとここに表示されます。</div>
+      <div id="empty" class="card center muted hidden" data-i18n="g_empty">まだ写真が届いていません。撮影が終わるとここに表示されます。</div>
       <div class="grid" id="grid"></div>
-      <button class="btn brand fav-save hidden" id="downloadFavBtn" style="margin-top:20px"><i data-icon="heart" data-size="18"></i> <span id="favCount">お気に入りを保存</span></button>
+      <button class="btn brand fav-save hidden" id="downloadFavBtn" style="margin-top:20px"><i data-icon="heart" data-size="18"></i> <span id="favCount" data-i18n="g_save_fav">お気に入りを保存</span></button>
       <div class="btn-row" id="actions" style="margin-top:12px">
-        <button class="btn secondary" id="downloadAllBtn"><i data-icon="download" data-size="18"></i> 全部保存</button>
-        <button class="btn secondary" id="shareBtn"><i data-icon="share" data-size="18"></i> 共有</button>
+        <button class="btn secondary" id="downloadAllBtn"><i data-icon="download" data-size="18"></i> <span data-i18n="g_save_all">全部保存</span></button>
+        <button class="btn secondary" id="shareBtn"><i data-icon="share" data-size="18"></i> <span data-i18n="g_share">共有</span></button>
       </div>
-      <button class="btn secondary" id="refreshBtn" style="margin-top:12px"><i data-icon="refresh" data-size="18"></i> 更新</button>
-      <p class="muted center" style="font-size:12px;margin-top:14px">ハートでお気に入り、タップでかんたん編集</p>
+      <button class="btn secondary" id="refreshBtn" style="margin-top:12px"><i data-icon="refresh" data-size="18"></i> <span data-i18n="g_refresh">更新</span></button>
+      <p class="muted center" style="font-size:12px;margin-top:14px" data-i18n="g_hint">ハートでお気に入り、タップでかんたん編集</p>
     </section>
 
     <!-- editor -->
     <section id="editor-view" class="hidden editor">
-      <p class="eyebrow">Edit</p>
-      <h1>かんたん編集</h1>
+      <p class="eyebrow" data-i18n="g_edit_eyebrow">Edit</p>
+      <h1 data-i18n="g_edit_h1">かんたん編集</h1>
       <canvas id="canvas"></canvas>
-      <div class="slider-row"><label><i data-icon="sparkles" data-size="15"></i>明るさ</label><input type="range" id="brightness" min="50" max="150" value="100"></div>
-      <div class="slider-row"><label><i data-icon="image" data-size="15"></i>コントラスト</label><input type="range" id="contrast" min="50" max="150" value="100"></div>
-      <div class="slider-row"><label><i data-icon="heart" data-size="15"></i>彩度</label><input type="range" id="saturate" min="0" max="200" value="100"></div>
-      <div class="slider-row"><label><i data-icon="zap" data-size="15"></i>暖かみ</label><input type="range" id="warmth" min="-50" max="50" value="0"></div>
-      <button class="btn brand" id="downloadBtn"><i data-icon="download" data-size="18"></i> この写真を保存</button>
-      <button class="btn secondary" id="backBtn">ギャラリーに戻る</button>
+      <div class="slider-row"><label><i data-icon="sparkles" data-size="15"></i><span data-i18n="g_brightness">明るさ</span></label><input type="range" id="brightness" min="50" max="150" value="100"></div>
+      <div class="slider-row"><label><i data-icon="image" data-size="15"></i><span data-i18n="g_contrast">コントラスト</span></label><input type="range" id="contrast" min="50" max="150" value="100"></div>
+      <div class="slider-row"><label><i data-icon="heart" data-size="15"></i><span data-i18n="g_saturate">彩度</span></label><input type="range" id="saturate" min="0" max="200" value="100"></div>
+      <div class="slider-row"><label><i data-icon="zap" data-size="15"></i><span data-i18n="g_warmth">暖かみ</span></label><input type="range" id="warmth" min="-50" max="50" value="0"></div>
+      <button class="btn brand" id="downloadBtn"><i data-icon="download" data-size="18"></i> <span data-i18n="g_save_this">この写真を保存</span></button>
+      <button class="btn secondary" id="backBtn" data-i18n="g_back">ギャラリーに戻る</button>
     </section>
   </div>
 
   <script src="/static/js/icons.js"></script>
+  <script src="/static/js/i18n.js"></script>
   <script src="/static/js/common.js"></script>
   <script src="/static/js/gallery.js"></script>
 </body>

@@ -14,35 +14,35 @@
 <body>
   <div class="app">
     <div class="topbar">
-      <a class="navback" href="/" aria-label="ホームに戻る"><i data-icon="back" data-size="18"></i></a>
+      <a class="navback" href="/" aria-label="ホームに戻る" data-i18n-aria="nav_back"><i data-icon="back" data-size="18"></i></a>
       <a class="logo" href="/"><span class="u">Uber</span>PHOTO</a>
-      <div class="badge">Guest</div>
+      <div class="badge" data-i18n="badge_guest">Guest</div>
     </div>
 
     <!-- STEP 1: plan + info -->
     <section id="step-plan">
-      <p class="eyebrow">Choose your plan</p>
-      <h1>プランを選ぶ</h1>
-      <p class="sub">税込価格・レタッチ不要・その場で受け取り。</p>
+      <p class="eyebrow" data-i18n="cp_eyebrow">Choose your plan</p>
+      <h1 data-i18n="cp_h1">プランを選ぶ</h1>
+      <p class="sub" data-i18n="cp_sub">税込価格・レタッチ不要・その場で受け取り。</p>
 
       <div class="chips" style="margin-bottom:18px">
-        <span class="chip"><i data-icon="clock" data-size="15"></i>30分</span>
-        <span class="chip"><i data-icon="zap" data-size="15"></i>即マッチ</span>
-        <span class="chip"><i data-icon="shield" data-size="15"></i>本人確認済み</span>
+        <span class="chip"><i data-icon="clock" data-size="15"></i><span data-i18n="chip_30min">30分</span></span>
+        <span class="chip"><i data-icon="zap" data-size="15"></i><span data-i18n="chip_instant">即マッチ</span></span>
+        <span class="chip"><i data-icon="shield" data-size="15"></i><span data-i18n="chip_verified">本人確認済み</span></span>
       </div>
 
       <div id="plans"></div>
 
-      <label>お名前（ニックネーム可）</label>
-      <input type="text" id="name" placeholder="例：たろう" />
+      <label data-i18n="label_name">お名前（ニックネーム可）</label>
+      <input type="text" id="name" placeholder="例：たろう" data-i18n-ph="ph_name" />
 
-      <label>エリア（都道府県）</label>
+      <label data-i18n="label_area">エリア（都道府県）</label>
       <div class="select-wrap">
         <select id="areaSelect" aria-label="エリアを選ぶ"></select>
         <i data-icon="chevron" data-size="18" class="select-chev"></i>
       </div>
 
-      <label>撮影スポット</label>
+      <label data-i18n="label_spot">撮影スポット</label>
       <div class="pick-map">
         <svg viewBox="0 0 400 230" preserveAspectRatio="xMidYMid slice" class="pmap-svg" role="img" aria-label="エリアの地図">
           <rect width="400" height="230" fill="#eef1ea"/>
@@ -60,7 +60,7 @@
           <!-- spot pins (rendered by JS, positioned from each spot's lat/lng) -->
           <g id="spotPins"></g>
         </svg>
-        <div class="pmap-cap" id="mapCap"><i data-icon="map" data-size="13"></i><span>ピンをタップ、または下から選択</span></div>
+        <div class="pmap-cap" id="mapCap"><i data-icon="map" data-size="13"></i><span data-i18n="map_cap_default">ピンをタップ、または下から選択</span></div>
       </div>
       <div class="select-wrap">
         <select id="spotSelect" aria-label="撮影スポットを選ぶ">
@@ -68,38 +68,38 @@
         </select>
         <i data-icon="chevron" data-size="18" class="select-chev"></i>
       </div>
-      <p class="spot-hint" id="spotHint"><i data-icon="sparkles" data-size="14"></i><span>スポットを選ぶと、きれいに撮れる時間帯のヒントが出ます</span></p>
+      <p class="spot-hint" id="spotHint"><i data-icon="sparkles" data-size="14"></i><span data-i18n="spot_hint_default">スポットを選ぶと、きれいに撮れる時間帯のヒントが出ます</span></p>
 
       <!-- shoot details -->
       <div class="section">
-        <div class="section-head"><h2>撮影の詳細</h2><span class="more">任意</span></div>
+        <div class="section-head"><h2 data-i18n="details_head">撮影の詳細</h2><span class="more" data-i18n="details_optional">任意</span></div>
 
-        <label class="mini-label"><i data-icon="user" data-size="14"></i> 人数</label>
+        <label class="mini-label"><i data-icon="user" data-size="14"></i> <span data-i18n="label_people">人数</span></label>
         <div class="opt-chips" id="peopleChips"></div>
 
-        <label class="mini-label"><i data-icon="heart" data-size="14"></i> シーン（複数選択OK）</label>
+        <label class="mini-label"><i data-icon="heart" data-size="14"></i> <span data-i18n="label_scene">シーン（複数選択OK）</span></label>
         <div class="opt-chips" id="sceneChips"></div>
 
-        <label class="mini-label"><i data-icon="edit" data-size="14"></i> カメラマンへの要望</label>
-        <textarea id="note" rows="2" placeholder="例：赤いコートで雷門の前にいます／カップル写真メインで"></textarea>
+        <label class="mini-label"><i data-icon="edit" data-size="14"></i> <span data-i18n="label_request">カメラマンへの要望</span></label>
+        <textarea id="note" rows="2" placeholder="例：赤いコートで雷門の前にいます／カップル写真メインで" data-i18n-ph="ph_request"></textarea>
       </div>
 
       <!-- what's included -->
       <div class="section">
-        <div class="section-head"><h2>含まれるもの</h2></div>
+        <div class="section-head"><h2 data-i18n="included_head">含まれるもの</h2></div>
         <div class="card" style="padding:6px 18px">
           <div class="features">
-            <div class="feature"><div class="fi"><i data-icon="camera"></i></div><div><div class="ft">プロ機材で撮影</div><div class="fd">一眼の自然光ポートレート・スナップ</div></div></div>
-            <div class="feature"><div class="fi"><i data-icon="zap"></i></div><div><div class="ft">その場で即共有</div><div class="fd">撮ってすぐ、スマホに全データ</div></div></div>
-            <div class="feature"><div class="fi"><i data-icon="edit"></i></div><div><div class="ft">かんたん編集つき</div><div class="fd">明るさ・色味をワンタップ調整</div></div></div>
-            <div class="feature"><div class="fi"><i data-icon="image"></i></div><div><div class="ft">写真の権利はあなたに</div><div class="fd">SNS掲載・印刷も自由</div></div></div>
+            <div class="feature"><div class="fi"><i data-icon="camera"></i></div><div><div class="ft" data-i18n="feat1_t">プロ機材で撮影</div><div class="fd" data-i18n="feat1_d">一眼の自然光ポートレート・スナップ</div></div></div>
+            <div class="feature"><div class="fi"><i data-icon="zap"></i></div><div><div class="ft" data-i18n="feat2_t">その場で即共有</div><div class="fd" data-i18n="feat2_d">撮ってすぐ、スマホに全データ</div></div></div>
+            <div class="feature"><div class="fi"><i data-icon="edit"></i></div><div><div class="ft" data-i18n="feat3_t">かんたん編集つき</div><div class="fd" data-i18n="feat3_d">明るさ・色味をワンタップ調整</div></div></div>
+            <div class="feature"><div class="fi"><i data-icon="image"></i></div><div><div class="ft" data-i18n="feat4_t">写真の権利はあなたに</div><div class="fd" data-i18n="feat4_d">SNS掲載・印刷も自由</div></div></div>
           </div>
         </div>
       </div>
 
       <!-- sample work -->
       <div class="section">
-        <div class="section-head"><h2>撮れる写真</h2></div>
+        <div class="section-head"><h2 data-i18n="work_head">撮れる写真</h2></div>
         <div class="duo-grid">
           <div class="duo"><img src="/static/img/work1.jpg" alt=""></div>
           <div class="duo"><img src="/static/img/work3.jpg" alt=""></div>
@@ -111,57 +111,57 @@
       <div class="cta-bar">
         <div class="cta-inner">
           <div class="cta-summary">
-            <div class="cta-plan" id="ctaPlan">プランを選択してください</div>
+            <div class="cta-plan" id="ctaPlan" data-i18n="cta_pick_plan">プランを選択してください</div>
             <div class="cta-price" id="ctaPrice">—</div>
           </div>
-          <button class="btn brand" id="toPay" disabled>依頼する <i data-icon="arrow" data-size="18"></i></button>
+          <button class="btn brand" id="toPay" disabled><span data-i18n="btn_order">依頼する</span> <i data-icon="arrow" data-size="18"></i></button>
         </div>
       </div>
     </section>
 
     <!-- STEP 1.5: order confirmation -->
     <section id="step-confirm" class="hidden">
-      <p class="eyebrow">Confirm</p>
-      <h1>ご依頼内容の確認</h1>
-      <p class="sub">内容をご確認ください。お支払いは確定後です。</p>
+      <p class="eyebrow" data-i18n="confirm_eyebrow">Confirm</p>
+      <h1 data-i18n="confirm_h1">ご依頼内容の確認</h1>
+      <p class="sub" data-i18n="confirm_sub">内容をご確認ください。お支払いは確定後です。</p>
       <div class="card summary">
-        <div class="sum-row"><span>プラン</span><b id="cf-plan"></b></div>
-        <div class="sum-row"><span>枚数</span><b id="cf-shots"></b></div>
-        <div class="sum-row"><span>撮影時間</span><b id="cf-min"></b></div>
-        <div class="sum-row"><span>撮影スポット</span><b id="cf-loc"></b></div>
-        <div class="sum-row" id="cf-people-row"><span>人数</span><b id="cf-people"></b></div>
-        <div class="sum-row" id="cf-scene-row"><span>シーン</span><b id="cf-scene"></b></div>
-        <div class="sum-row" id="cf-note-row"><span>要望</span><b id="cf-note" style="text-align:right;max-width:60%"></b></div>
-        <div class="sum-row"><span>お名前</span><b id="cf-name"></b></div>
+        <div class="sum-row"><span data-i18n="sum_plan">プラン</span><b id="cf-plan"></b></div>
+        <div class="sum-row"><span data-i18n="sum_shots">枚数</span><b id="cf-shots"></b></div>
+        <div class="sum-row"><span data-i18n="sum_min">撮影時間</span><b id="cf-min"></b></div>
+        <div class="sum-row"><span data-i18n="sum_loc">撮影スポット</span><b id="cf-loc"></b></div>
+        <div class="sum-row" id="cf-people-row"><span data-i18n="sum_people">人数</span><b id="cf-people"></b></div>
+        <div class="sum-row" id="cf-scene-row"><span data-i18n="sum_scene">シーン</span><b id="cf-scene"></b></div>
+        <div class="sum-row" id="cf-note-row"><span data-i18n="sum_note">要望</span><b id="cf-note" style="text-align:right;max-width:60%"></b></div>
+        <div class="sum-row"><span data-i18n="sum_name">お名前</span><b id="cf-name"></b></div>
         <hr class="divider">
-        <div class="sum-row"><span>小計（税抜）</span><span id="cf-base"></span></div>
-        <div class="sum-row"><span>消費税 (10%)</span><span id="cf-tax"></span></div>
-        <div class="sum-row total"><span>合計</span><b id="cf-total"></b></div>
+        <div class="sum-row"><span data-i18n="sum_subtotal">小計（税抜）</span><span id="cf-base"></span></div>
+        <div class="sum-row"><span data-i18n="sum_tax">消費税 (10%)</span><span id="cf-tax"></span></div>
+        <div class="sum-row total"><span data-i18n="sum_total">合計</span><b id="cf-total"></b></div>
       </div>
       <div class="chips" style="margin-bottom:6px">
-        <span class="chip"><i data-icon="zap" data-size="15"></i>レタッチ不要・即共有</span>
-        <span class="chip"><i data-icon="image" data-size="15"></i>全データお渡し</span>
+        <span class="chip"><i data-icon="zap" data-size="15"></i><span data-i18n="chip_retouch">レタッチ不要・即共有</span></span>
+        <span class="chip"><i data-icon="image" data-size="15"></i><span data-i18n="chip_alldata">全データお渡し</span></span>
       </div>
-      <button class="btn brand" id="confirmPay">この内容で決済して依頼 <i data-icon="arrow" data-size="19"></i></button>
-      <button class="btn secondary" id="confirmBack">内容を修正する</button>
+      <button class="btn brand" id="confirmPay"><span data-i18n="btn_confirm_pay">この内容で決済して依頼</span> <i data-icon="arrow" data-size="19"></i></button>
+      <button class="btn secondary" id="confirmBack" data-i18n="btn_edit">内容を修正する</button>
     </section>
 
     <!-- STEP 2: select photographer -->
     <section id="step-select" class="hidden">
-      <p class="eyebrow">Nearby</p>
-      <h1>カメラマンを選ぶ</h1>
-      <p class="near" style="margin-bottom:16px"><span class="dot"></span><span id="nearCount">近くに3人</span> 待機中</p>
+      <p class="eyebrow" data-i18n="sel_eyebrow">Nearby</p>
+      <h1 data-i18n="sel_h1">カメラマンを選ぶ</h1>
+      <p class="near" style="margin-bottom:16px"><span class="dot"></span><span id="nearCount">近くに3人</span> <span data-i18n="near_standby">待機中</span></p>
 
       <button class="omakase" id="omakaseBtn">
         <span class="om-ic"><i data-icon="zap" data-size="20"></i></span>
-        <span class="om-text"><span class="om-t">おまかせ・最短のプロ</span><span class="om-d" id="omakaseDesc">いちばん早く来られるカメラマンに即依頼</span></span>
+        <span class="om-text"><span class="om-t" data-i18n="omakase_t">おまかせ・最短のプロ</span><span class="om-d" id="omakaseDesc" data-i18n="omakase_d">いちばん早く来られるカメラマンに即依頼</span></span>
         <i data-icon="arrow" data-size="18"></i>
       </button>
 
-      <div class="or-row" id="orRow"><span>または、指名して選ぶ</span></div>
+      <div class="or-row" id="orRow"><span data-i18n="or_pick">または、指名して選ぶ</span></div>
 
       <div id="photographers"></div>
-      <button class="btn secondary" id="backToPlan">プラン選択に戻る</button>
+      <button class="btn secondary" id="backToPlan" data-i18n="back_to_plan">プラン選択に戻る</button>
     </section>
 
     <!-- profile detail sheet -->
@@ -172,18 +172,18 @@
 
     <!-- STEP 2.5: photographer on the way (map + ETA) -->
     <section id="step-arriving" class="hidden">
-      <p class="eyebrow">On the way</p>
-      <h1 id="arriveTitle">向かっています</h1>
-      <p class="sub" id="arriveSub">カメラマンがお迎えに向かっています</p>
+      <p class="eyebrow" data-i18n="arr_eyebrow">On the way</p>
+      <h1 id="arriveTitle" data-i18n="arr_h1">向かっています</h1>
+      <p class="sub" id="arriveSub" data-i18n="arr_sub">カメラマンがお迎えに向かっています</p>
 
       <div class="stepper">
-        <div class="st-node"><span class="st-dot"></span><span class="st-lab">マッチ</span></div>
+        <div class="st-node"><span class="st-dot"></span><span class="st-lab" data-i18n="st_match">マッチ</span></div>
         <div class="st-bar"></div>
-        <div class="st-node"><span class="st-dot"></span><span class="st-lab">向かう</span></div>
+        <div class="st-node"><span class="st-dot"></span><span class="st-lab" data-i18n="st_go">向かう</span></div>
         <div class="st-bar"></div>
-        <div class="st-node"><span class="st-dot"></span><span class="st-lab">撮影</span></div>
+        <div class="st-node"><span class="st-dot"></span><span class="st-lab" data-i18n="st_shoot">撮影</span></div>
         <div class="st-bar"></div>
-        <div class="st-node"><span class="st-dot"></span><span class="st-lab">お届け</span></div>
+        <div class="st-node"><span class="st-dot"></span><span class="st-lab" data-i18n="st_deliver">お届け</span></div>
       </div>
 
       <div class="map-card">
@@ -218,7 +218,7 @@
             </animateMotion>
           </g>
         </svg>
-        <div class="eta-badge"><span class="eta-num" id="etaCount">--:--</span><span class="eta-lab">到着まで</span></div>
+        <div class="eta-badge"><span class="eta-num" id="etaCount">--:--</span><span class="eta-lab" data-i18n="eta_label">到着まで</span></div>
       </div>
 
       <div class="card photographer-card" style="margin-top:14px">
@@ -227,48 +227,48 @@
           <div style="font-family:var(--serif);font-size:18px;font-weight:700" id="aName"></div>
           <div class="rating-inline" id="aMeta"><i data-icon="star" data-size="14"></i></div>
         </div>
-        <div class="near" style="padding:7px 13px"><span class="dot"></span>移動中</div>
+        <div class="near" style="padding:7px 13px"><span class="dot"></span><span data-i18n="moving">移動中</span></div>
       </div>
 
       <div class="btn-row" style="margin-top:16px">
-        <button class="btn secondary" id="reselectBtn"><i data-icon="refresh" data-size="17"></i> 別の人にする</button>
-        <button class="btn secondary" id="cancelReqBtn">依頼をやめる</button>
+        <button class="btn secondary" id="reselectBtn"><i data-icon="refresh" data-size="17"></i> <span data-i18n="btn_reselect">別の人にする</span></button>
+        <button class="btn secondary" id="cancelReqBtn" data-i18n="btn_cancel_req">依頼をやめる</button>
       </div>
     </section>
 
     <!-- STEP 3: matched / photos -->
     <section id="step-matched" class="hidden">
-      <p class="eyebrow">Delivery</p>
-      <h1 id="matchedTitle">写真が届きます</h1>
+      <p class="eyebrow" data-i18n="del_eyebrow">Delivery</p>
+      <h1 id="matchedTitle" data-i18n="del_h1">写真が届きます</h1>
 
       <div class="stepper">
-        <div class="st-node"><span class="st-dot"></span><span class="st-lab">マッチ</span></div>
+        <div class="st-node"><span class="st-dot"></span><span class="st-lab" data-i18n="st_match">マッチ</span></div>
         <div class="st-bar"></div>
-        <div class="st-node"><span class="st-dot"></span><span class="st-lab">向かう</span></div>
+        <div class="st-node"><span class="st-dot"></span><span class="st-lab" data-i18n="st_go">向かう</span></div>
         <div class="st-bar"></div>
-        <div class="st-node"><span class="st-dot"></span><span class="st-lab">撮影</span></div>
+        <div class="st-node"><span class="st-dot"></span><span class="st-lab" data-i18n="st_shoot">撮影</span></div>
         <div class="st-bar"></div>
-        <div class="st-node"><span class="st-dot"></span><span class="st-lab">お届け</span></div>
+        <div class="st-node"><span class="st-dot"></span><span class="st-lab" data-i18n="st_deliver">お届け</span></div>
       </div>
 
       <div class="card photographer-card">
         <div class="avatar" id="pAvatar">?</div>
         <div style="flex:1">
           <div style="font-family:var(--serif);font-size:18px;font-weight:700" id="pName"></div>
-          <div class="rating-inline" id="pMeta"><i data-icon="star" data-size="14"></i>まもなく合流します</div>
+          <div class="rating-inline" id="pMeta"><i data-icon="star" data-size="14"></i><span data-i18n="soon_join">まもなく合流します</span></div>
         </div>
       </div>
       <div class="card center">
-        <p class="muted" style="margin-top:0">撮影が終わると、ここに写真が届きます</p>
+        <p class="muted" style="margin-top:0" data-i18n="matched_waitphoto">撮影が終わると、ここに写真が届きます</p>
         <p id="shotStatus" class="big">📷</p>
       </div>
-      <a class="btn brand hidden" id="toGallery">写真を見る <i data-icon="arrow" data-size="19"></i></a>
+      <a class="btn brand hidden" id="toGallery"><span data-i18n="btn_view_photos">写真を見る</span> <i data-icon="arrow" data-size="19"></i></a>
 
       <!-- post-shoot review -->
       <div class="card review-card hidden" id="reviewCard">
         <div class="rv-head">
-          <h2>撮影はいかがでしたか？</h2>
-          <p class="muted" id="rvWho" style="margin:2px 0 0">カメラマンを評価しましょう</p>
+          <h2 data-i18n="rv_head">撮影はいかがでしたか？</h2>
+          <p class="muted" id="rvWho" style="margin:2px 0 0" data-i18n="rv_who">カメラマンを評価しましょう</p>
         </div>
         <div class="star-pick" id="starPick" role="radiogroup" aria-label="星で評価">
           <button type="button" class="star" data-v="1" aria-label="星1"><i data-icon="star" data-size="34"></i></button>
@@ -277,9 +277,25 @@
           <button type="button" class="star" data-v="4" aria-label="星4"><i data-icon="star" data-size="34"></i></button>
           <button type="button" class="star" data-v="5" aria-label="星5"><i data-icon="star" data-size="34"></i></button>
         </div>
-        <textarea id="rvText" rows="2" placeholder="感想をひとこと（任意）"></textarea>
-        <button class="btn brand" id="rvSubmit" disabled>レビューを送る</button>
-        <div class="rv-thanks hidden" id="rvThanks"><i data-icon="check" data-size="18"></i> ご評価ありがとうございました！</div>
+        <textarea id="rvText" rows="2" placeholder="感想をひとこと（任意）" data-i18n-ph="ph_review"></textarea>
+        <button class="btn brand" id="rvSubmit" disabled data-i18n="btn_review">レビューを送る</button>
+        <div class="rv-thanks hidden" id="rvThanks"><i data-icon="check" data-size="18"></i> <span data-i18n="rv_thanks">ご評価ありがとうございました！</span></div>
+      </div>
+
+      <!-- optional tip -->
+      <div class="card tip-card hidden" id="tipCard">
+        <div class="rv-head">
+          <h2><i data-icon="coin" data-size="18"></i> <span data-i18n="tip_head">チップを贈る</span></h2>
+          <p class="muted" id="tipWho" style="margin:2px 0 0" data-i18n="tip_who">よかったら感謝の気持ちをカメラマンへ（任意）</p>
+        </div>
+        <div class="tip-opts" id="tipOpts">
+          <button type="button" class="tip-opt" data-v="500">¥500</button>
+          <button type="button" class="tip-opt" data-v="1000">¥1,000</button>
+          <button type="button" class="tip-opt" data-v="2000">¥2,000</button>
+          <button type="button" class="tip-opt" data-v="3000">¥3,000</button>
+        </div>
+        <button class="btn brand" id="tipSubmit" disabled data-i18n="btn_tip">チップを贈る</button>
+        <div class="rv-thanks hidden" id="tipThanks"><i data-icon="heart" data-size="18"></i> <span id="tipThanksText">チップをありがとうございました！</span></div>
       </div>
     </section>
 
@@ -295,14 +311,14 @@
         <div class="chat-head">
           <img class="chat-avatar" id="chatAvatar" src="/static/img/work1.jpg" alt="">
           <div style="flex:1;min-width:0">
-            <div class="chat-name" id="chatName">カメラマン</div>
-            <div class="chat-sub muted">合流前のやりとりにどうぞ</div>
+            <div class="chat-name" id="chatName" data-i18n="chat_default_name">カメラマン</div>
+            <div class="chat-sub muted" data-i18n="chat_sub">合流前のやりとりにどうぞ</div>
           </div>
           <button class="chat-close" id="chatClose" aria-label="閉じる">×</button>
         </div>
         <div class="chat-log" id="chatLog"></div>
         <form class="chat-input" id="chatForm">
-          <input type="text" id="chatText" placeholder="メッセージを入力…" autocomplete="off" maxlength="500">
+          <input type="text" id="chatText" placeholder="メッセージを入力…" autocomplete="off" maxlength="500" data-i18n-ph="ph_chat">
           <button type="submit" class="chat-send" aria-label="送信"><i data-icon="send" data-size="20"></i></button>
         </form>
       </div>
@@ -310,6 +326,7 @@
   </div>
 
   <script src="/static/js/icons.js"></script>
+  <script src="/static/js/i18n.js"></script>
   <script src="/static/js/common.js"></script>
   <script src="/static/js/customer.js"></script>
 </body>
